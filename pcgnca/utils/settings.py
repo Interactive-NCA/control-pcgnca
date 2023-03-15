@@ -9,6 +9,7 @@ import pickle
 
 # --------------------- Internal libraries imports
 from ..evo import Evolver
+from .logging import ScriptInformation
 
 # --------------------- Private functions
 def _load_settings(path):
@@ -42,6 +43,7 @@ def _get_experiment_name(settings):
     # use _ to separate parameters
     name = ""
     for key, value in settings.items():
+        key = "".join([k[0].upper() + k[1:] for k in key.split("_")]) # to Camel Case
         name += f"{key}-{value}_" 
 
     # Get rid of the last underscore
@@ -69,6 +71,11 @@ def get_settings(load_path, save_path):
     # Add save path to settings
     settings["save_path"] = save_path
 
+    # Initialise logging
+    settings["logger"] = ScriptInformation()
+    settings["logger"].script_time()
+    settings["logger"].section_start(":construction: Experiment Setup")
+
     return settings
 
 def get_evolver(settings):
@@ -80,9 +87,15 @@ def get_evolver(settings):
     # - Continue
     try:
         evolver = pickle.load(open(os.path.join(settings["save_path"], "evolver.pkl"), "rb"))
+        evolver._init(**settings)
+        evolver.logger.working_on("Will start evolution using EXISTING archive with this experiment setup ...")
     
     # - Start from scratch
-    except:
+    except Exception as E:
         evolver = Evolver(**settings)
+        evolver.logger.working_on("Will start evolution from SCRATCH with this experiment setup ...")
+
+    # - Let user know about the result
+    evolver._show_exp_settings()
 
     return evolver

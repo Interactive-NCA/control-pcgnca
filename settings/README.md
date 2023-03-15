@@ -1,1 +1,0 @@
-This readme should explain all the possible settings.

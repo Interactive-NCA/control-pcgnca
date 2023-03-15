@@ -1,0 +1,4 @@
+{
+    "bcs": ["symmetry", "path-length"],
+    "bcs_bounds": []
+}

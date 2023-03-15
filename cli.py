@@ -9,7 +9,7 @@ import json
 from pcgnca.utils import get_settings, get_evolver
 
 # ------- Global vars definition
-SETTINGS_LOAD_PATH = "settings/settings.json"
+SETTINGS_LOAD_PATH = "settings/experiment/settings.json"
 EXPERIMENT_SAVE_PATH = "experiments"
 
 # ------- CLI arguments definition
@@ -26,7 +26,6 @@ parser.add_argument('--save_freq', action='store', default=100)
 
 # -- Parse the arguments
 args = parser.parse_args()
-
 
 # ------- Execution based on flags
 def main():
