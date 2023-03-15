@@ -2,8 +2,13 @@
 Functions that help with handling the settings of the experimet.
 """
 
+# --------------------- External libraries imports
 import json
 import os
+import pickle
+
+# --------------------- Internal libraries imports
+from ..evo import Evolver
 
 # --------------------- Private functions
 def _load_settings(path):
@@ -61,4 +66,23 @@ def get_settings(load_path, save_path):
     # Save the settings dict to an experiment folder
     save_path = _log_settings(settings, save_path, exp_name)
 
-    return settings, save_path
+    # Add save path to settings
+    settings["save_path"] = save_path
+
+    return settings
+
+def get_evolver(settings):
+    """Loads the given evolver based on the save path:
+    - path exists including the evolver.pkl -> continue in evolution
+    - does not exist, the evolver needs -> start from scratch
+    """
+
+    # - Continue
+    try:
+        evolver = pickle.load(open(os.path.join(settings["save_path"], "evolver.pkl"), "rb"))
+    
+    # - Start from scratch
+    except:
+        evolver = Evolver(**settings)
+
+    return evolver

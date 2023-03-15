@@ -1,5 +1,6 @@
-from .settings import get_settings
+from .settings import get_settings, get_evolver
 
 __all__ = [
-    "get_settings"
+    "get_settings",
+    "get_evolver"
 ]
