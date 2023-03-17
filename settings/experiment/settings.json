@@ -1,4 +1,6 @@
 {
+    "game": "zelda",
+    "model_name": "NCA",
     "step_size": 0.05,
     "reeval_elites": true,
     "fix_seeds": false,

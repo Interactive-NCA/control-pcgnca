@@ -9,7 +9,7 @@ import json
 from pcgnca.utils import get_settings, get_evolver
 
 # ------- Global vars definition
-SETTINGS_LOAD_PATH = "settings/experiment/settings.json"
+SETTINGS_LOAD_PATH = "settings"
 EXPERIMENT_SAVE_PATH = "experiments"
 
 # ------- CLI arguments definition

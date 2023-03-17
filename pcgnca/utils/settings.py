@@ -13,8 +13,18 @@ from .logging import ScriptInformation
 
 # --------------------- Private functions
 def _load_settings(path):
-    with open(path, 'r') as f:
+
+    # Load the experiment settings
+    full_path = os.path.join(path, "experiment", "settings.json")
+    with open(full_path, 'r') as f:
         settings = json.load(f) 
+
+    # Load the given game's settings
+    game_settings_path = os.path.join(path, "games", f"{settings['game']}.json")
+    with open(game_settings_path, 'r') as f:
+        game_settings = json.load(f)
+        settings.update(game_settings)
+
     return settings
 
 def _log_settings(settings, path, exp_name):
@@ -38,13 +48,17 @@ def _log_settings(settings, path, exp_name):
 
 def _get_experiment_name(settings):
 
+    # Avoid following settings when creating name
+    avoid = ["bcs", "bcs_bounds", "n_tiles"]
+
     # Create a name:
     # use - to separate key value
     # use _ to separate parameters
     name = ""
     for key, value in settings.items():
-        key = "".join([k[0].upper() + k[1:] for k in key.split("_")]) # to Camel Case
-        name += f"{key}-{value}_" 
+        if key not in avoid:
+            key = "".join([k[0].upper() + k[1:] for k in key.split("_")]) # to Camel Case
+            name += f"{key}-{value}_" 
 
     # Get rid of the last underscore
     name = name[:-1]

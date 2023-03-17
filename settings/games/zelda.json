@@ -1,4 +1,5 @@
 {
     "bcs": ["symmetry", "path-length"],
-    "bcs_bounds": []
+    "bcs_bounds": [[0, 1], [0, 271]],
+    "n_tiles": 8
 }
