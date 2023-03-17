@@ -8,9 +8,11 @@ import json
 import os
 import pickle
 
+import numpy as np
 from ribs.archives import GridArchive
 from ribs.schedulers import Scheduler
 from ribs.emitters import EvolutionStrategyEmitter
+from tqdm import tqdm
 
 # --------------------- Internal libraries imports
 from ._models import NCA, get_init_weights
@@ -26,7 +28,7 @@ class Evolver:
         self._init(**settings)
 
         # -- Infered attributes
-        self.completed_generations = None
+        self.completed_generations = 0
 
         # -- Setup the model
         self._init_model()
@@ -37,10 +39,37 @@ class Evolver:
 
     # --------------------- Public functions
     def evolve(self):
-        self.completed_generations = 10
-        self._save()
+
+        # - Main training loop
+        for itr in tqdm(range(self.completed_generations, int(self.n_generations) + 1)):
+
+            # -- Request potential new models/elites from the optimizer
+            gen_sols = self.gen_optimizer.ask()
+
+            # -- Get latent seeds
+
+            # -- Increment the number of completed generations
+            self.completed_generations += 1
+
+
 
     # --------------------- Private functions (not exposed to cli)
+    def _get_latent_seeds(self):
+
+        # - Get the random initial states. Essenitally each seed is
+        # 2D array where each cell contains int encoding tile type
+        # Since we may have multiple seeds, the result is a 3D array
+        init_states = np.random.randint(
+            low=0, high=self.n_tiles, size=(self.n_init_states, *self.grid_dim)
+        )
+
+        # - If certain tiles should be fixed,
+        # generate semi-random fixed tiles (semi = still have to conform to game rules),
+        # and adjust the init_states accordingly. Finally, add binary
+        # channel that denotes which encodes the fixed tile positions
+        if self.n_random_fixed_tiles > 0:
+            pass
+
     def _from_name_to_model(self, name):
         # - Overview of all models
         mapping = {

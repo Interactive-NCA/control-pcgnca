@@ -25,7 +25,7 @@ def _load_settings(path):
         game_settings = json.load(f)
         settings.update(game_settings)
 
-    return settings
+    return settings, game_settings
 
 def _log_settings(settings, path, exp_name):
 
@@ -46,10 +46,7 @@ def _log_settings(settings, path, exp_name):
 
     return save_path
 
-def _get_experiment_name(settings):
-
-    # Avoid following settings when creating name
-    avoid = ["bcs", "bcs_bounds", "n_tiles"]
+def _get_experiment_name(settings, avoid):
 
     # Create a name:
     # use - to separate key value
@@ -74,10 +71,11 @@ def get_settings(load_path, save_path):
     """
 
     # Load the json file into dict
-    settings = _load_settings(load_path)
+    settings, game_settings = _load_settings(load_path)
 
     # Get experiment name based on the settings
-    exp_name = _get_experiment_name(settings)
+    avoid = list(game_settings.keys()) # avoid adding these to the name
+    exp_name = _get_experiment_name(settings, avoid=avoid)
 
     # Save the settings dict to an experiment folder
     save_path = _log_settings(settings, save_path, exp_name)
