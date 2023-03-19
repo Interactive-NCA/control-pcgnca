@@ -105,23 +105,6 @@ def _init_weights(m):
         th.nn.init.orthogonal_(m.weight)
 
 # ------------------------- Public
-def get_binary_channel(fixed_tiles, dim):
-    """
-    Add binary channel based on the position
-    of fixed tiles. (i.e. tiles the model should not change)
-    """
-
-    # Get zeros array first
-    binary_channel = np.zeros((dim, dim))
-
-    # Extract rows and cols coords
-    rows, cols = fixed_tiles[:, 1], fixed_tiles[:, 2]
-
-    # Use fancy (that's how np calls it lol) indexing to update the bin channel
-    binary_channel[rows, cols] = binary_channel 
-
-    return binary_channel
-
 def get_init_weights(nn):
     """
     Use to get flat vector of weights from PyTorch model

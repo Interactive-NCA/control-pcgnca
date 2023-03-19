@@ -7,6 +7,8 @@ import json
 import os
 import pickle
 
+import numpy as np
+
 # --------------------- Internal libraries imports
 from ..evo import Evolver
 from .logging import ScriptInformation
@@ -80,8 +82,9 @@ def get_settings(load_path, save_path):
     # Save the settings dict to an experiment folder
     save_path = _log_settings(settings, save_path, exp_name)
 
-    # Add save path to settings
+    # Add save and settings path to settings dict
     settings["save_path"] = save_path
+    settings["settings_path"] = load_path
 
     # Initialise logging
     settings["logger"] = ScriptInformation()
