@@ -4,14 +4,15 @@
 # ------- External libraries imports
 import argparse
 import json
+import os
 
 # ------- Internal library imports
-from pcgnca.utils import get_settings, get_evolver
-from pcgnca.evo import generate_fixed_tiles
+from pcgnca.utils import get_settings, get_evolver, generate_fixed_tiles
 
 # ------- Global vars definition
 SETTINGS_LOAD_PATH = "settings"
 EXPERIMENT_SAVE_PATH = "experiments"
+GRAPHICS_PATH = os.path.join("assets", "games")
 
 # ------- CLI arguments definition
 parser = argparse.ArgumentParser(
@@ -75,7 +76,8 @@ def main():
             game=args.fixedgen_game,
             n_seeds=int(args.fixedgen_nseeds),
             difficulty=args.fixedgen_difficulty,
-            path=SETTINGS_LOAD_PATH
+            path=SETTINGS_LOAD_PATH,
+            graphics_path=os.path.join(GRAPHICS_PATH, args.fixedgen_game)
         )
 
 if __name__ == '__main__':
