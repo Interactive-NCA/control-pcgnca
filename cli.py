@@ -25,13 +25,13 @@ parser.add_argument('--evaluate', action='store_true', default=False)
 parser.add_argument('--gen-fixed-seeds', action='store_true', default=False)
 
 # --- Hyper-parameters for activities
-parser.add_argument('--n_cores', action='store')
-parser.add_argument('--n_generations', action='store')
-parser.add_argument('--save_freq', action='store', default=100)
+parser.add_argument('--n_cores', action='store', type=int)
+parser.add_argument('--n_generations', action='store', type=int)
+parser.add_argument('--save_freq', action='store', default=100, type=int)
 
 # ---- For fixed input seeds generation
 parser.add_argument('--fixedgen-game', action='store')
-parser.add_argument('--fixedgen-nseeds', action='store')
+parser.add_argument('--fixedgen-nseeds', action='store', type=int)
 parser.add_argument('--fixedgen-difficulty', action='store')
 
 # -- Parse the arguments

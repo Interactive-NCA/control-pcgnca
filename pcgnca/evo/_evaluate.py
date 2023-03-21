@@ -9,7 +9,105 @@ import numpy as np
 class ZeldaEvaluation:
 
     def __init__(self, dim):
+
+        # - User defined attributes
         self.dim = dim
+
+        # - Game rules
+        self.rules = {
+            "n_players": 1,
+            "n_keys": 1,
+            "n_doors": 1,
+            "n_regions": 1,
+            "nearest_enemy": (5, 144),
+            "n_enemies": (2, 5)
+        }
+
+        # - Define reward weights
+        self._reward_weights = {
+            "n_players": 3,
+            "n_keys": 3,
+            "n_doors": 3,
+            "n_regions": 5,
+            "n_enemies": 1,
+            "nearest_enemy": 2,
+            "path_length": 1
+        }
+
+        # - Bounds (TODO: get understanding of this section)
+        self._max_nearest_enemy = np.ceil(self.dim / 2 + 1) * (self.dim)
+        self._max_path_length = (np.ceil(self.dim / 2) * (self.dim) + np.floor(self.dim / 2)) * 2 - 1
+        self._cond_bounds = {
+            "nearest_enemy": (0, self._max_nearest_enemy),
+            "n_enemies": (0, self.dim * self.dim - 2),
+            "n_players": (0, self.dim * self.dim - 2),
+            "n_keys": (0, self.dim * self.dim - 2),
+            "n_doors": (0, self.dim * self.dim - 2),
+            "n_regions": (0, self.dim * self.dim / 2),
+            "path_length": (0, self._max_path_length)
+        }
+
+        # Normalize reward weights w.r.t. bounds of each metric. (... and also this section)
+        self._reward_weights_norm = {
+            k: v * 1 / (self._cond_bounds[k][1] - self._cond_bounds[k][0]) \
+                for k, v in self._reward_weights.items()
+        }
+    
+    def evaluate_level_batch(self, batch_stats):
+
+        # - Reliability
+        # -- Symmetry
+        symmetries = [s["symmetry"] for s in batch_stats]
+        symmetry_std = np.array(symmetries).std()
+        symmetry_mean = np.array(symmetries).mean()
+
+        # -- Path length
+        for s in batch_stats:
+            print(s)
+            print()
+        path_lengths = [s["path_length"] for s in batch_stats]
+        path_length_std = np.array(path_lengths).std()
+        path_length_mean = np.array(path_lengths).mean()
+
+        # -- Compute reliability
+        reliability = (symmetry_std + path_length_std)/2
+
+        # - Playbility
+        # we want to hit each of our rules exactly, penalize for anything else.
+        # for ranges, we take our least distance to any element in the range
+        batch_size = len(batch_stats)
+        playability_penalties = np.empty(batch_size)
+        for i, stats in enumerate(batch_stats):
+
+            playability_penalty = 0
+
+            for k in self.rules:
+
+                # --- Range
+                # Example:
+                # - n_enemies should be (2, 5) 
+                # -- actual number is 0 --> penalty is 2
+                # -- actual number is 8 --> penalty is 3
+                # -- actual number is 4 --> penalty is 0
+                if isinstance(self.rules[k], tuple):
+                    low, high = self.rules[k]
+                    penalty_k = abs(np.arange(low, high) - stats[k]).min()
+                
+                # --- Scalar value
+                else:
+                    penalty_k = abs(self.rules[k] - stats[k])
+
+                # --- Normalise the penalty and add it to the total penalty
+                playability_penalty += penalty_k*self._reward_weights_norm[k]
+
+            playability_penalties[i] = playability_penalty
+        
+        final_playability_penalty = np.mean(playability_penalties)
+
+        # - Objective function calculation
+        objective = final_playability_penalty + reliability
+
+        return objective, symmetry_mean, path_length_mean
 
     def get_zelda_level_stats(self, level):
         """
@@ -53,7 +151,7 @@ class ZeldaEvaluation:
                 for e_x,e_y in enemies:
                     if dijkstra[e_y][e_x] > 0 and dijkstra[e_y][e_x] < min_dist:
                         min_dist = dijkstra[e_y][e_x]
-                stats["nearest-enemy"] = min_dist
+                stats["nearest_enemy"] = min_dist
 
             # -- Compute the solution path length
             if stats["n_keys"] == 1 and stats["n_doors"] == 1:
@@ -62,19 +160,34 @@ class ZeldaEvaluation:
 
                 # start point is people
                 dijkstra_k, _ = run_dijkstra(p_x, p_y, level, [i for i in range(8) if i not in [1, 4]])
-                stats["path-length"] += dijkstra_k[k_y][k_x]
+                stats["path_length"] += dijkstra_k[k_y][k_x]
 
                 # start point is key
                 dijkstra_d,_ = run_dijkstra(k_x, k_y, level, [i for i in range(8) if i != 1])
-                stats["path-length"] += dijkstra_d[d_y][d_x]
+                stats["path_length"] += dijkstra_d[d_y][d_x]
         else:
-            stats["nearest-enemy"] = 0
-            stats["path-length"] = 0
+            stats["nearest_enemy"] = 0
+            stats["path_length"] = 0
+
+
+        # - Calculate symmetry
+        stats["symmetry"] = get_sym(level, self.dim)
 
         return stats
 
 # --------------------- Helper functions
 # ------------------------ Public functions
+def get_sym(int_map, dim):
+    """
+    Code used from Sam Earle's repository control-pcgrl.
+    Function to get the vertical symmetry of a level
+    int_map (numpy array of ints): representation of level
+    returns a symmetry float value normalized to a range of 0.0 to 1.0
+    """
+    result = (_get_ver_sym(int_map, dim) + _get_hor_sym(int_map, dim)) / 2.0
+
+    return result
+
 def run_dijkstra(x, y, map, passable_values):
     """
     Public function that runs dijkstra algorithm and return the map
@@ -197,3 +310,64 @@ def _flood_fill(x, y, color_map, map, color_index, passable_values):
                 continue
             queue.append((nx, ny))
     return num_tiles
+
+
+def _get_hor_sym(int_map, dim):
+    """
+    Code used from Sam Earle's repository control-pcgrl.
+    Function to get the horizontal symmetry of a level
+    int_map (numpy array of ints): representation of level
+    returns a symmetry float value normalized to a range of 0.0 to 1.0
+    """
+    max_val = dim*dim / 2  # for example 14*14/2=98  
+    m = 0
+
+    if int(int_map.shape[0]) % 2 == 0:
+        m = np.sum(
+            (
+                int_map[: int(int_map.shape[0] / 2)]
+                == np.flip(int_map[int(int_map.shape[0] / 2) :], 0)
+            ).astype(int)
+        )
+        m = m / max_val
+    else:
+        m = np.sum(
+            (
+                int_map[: int(int_map.shape[0] / 2)]
+                == np.flip(int_map[int(int_map.shape[0] / 2) + 1 :], 0)
+            ).astype(int)
+        )
+        m = m / max_val
+
+    return m
+
+
+def _get_ver_sym(int_map, dim):
+    """
+    Code used from Sam Earle's repository control-pcgrl.
+    Function to get the vertical symmetry of a level
+    int_map (numpy array of ints): representation of level
+    returns a symmetry float value normalized to a range of 0.0 to 1.0
+    """
+
+    max_val = dim*dim / 2  # for example 14*14/2=98 
+    m = 0
+    
+    if int(int_map.shape[1]) % 2 == 0:
+        m = np.sum(
+            (
+                int_map[:, : int(int_map.shape[1] / 2)]
+                == np.flip(int_map[:, int(int_map.shape[1] / 2) :], 1)
+            ).astype(int)
+        )
+        m = m / max_val
+    else:
+        m = np.sum(
+            (
+                int_map[:, : int(int_map.shape[1] / 2)]
+                == np.flip(int_map[:, int(int_map.shape[1] / 2) + 1 :], 1)
+            ).astype(int)
+        )
+        m = m / max_val
+
+    return m

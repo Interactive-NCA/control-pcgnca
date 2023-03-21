@@ -4,18 +4,23 @@ according to the given experiment settings.
 """
 
 # --------------------- External libraries imports
+import gc
 import json
 import os
 import pickle
 
 import numpy as np
+import psutil
 from ribs.archives import GridArchive
 from ribs.schedulers import Scheduler
 from ribs.emitters import EvolutionStrategyEmitter
 from tqdm import tqdm
 
+import ray
+
 # --------------------- Internal libraries imports
-from ._models import NCA, get_init_weights
+from ._models import NCA, get_init_weights, set_weights
+from ._simulate import simulate
 
 class Evolver:
 
@@ -47,16 +52,16 @@ class Evolver:
         for itr in tqdm(range(self.completed_generations, int(self.n_generations) + 1)):
 
             # -- Request potential new models/elites from the optimizer
-            gen_sols = self.gen_optimizer.ask()
+            gen_sols = self.scheduler.ask()
 
             # -- Get latent seeds
             init_states, fixed_states, binary_mask = self._get_latent_seeds()
 
             # -- Run stats about each solutions' performance
-            objs, bcs = self._get_gen_sols_stats(gen_sols)
+            objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask)
 
             # -- Send the stats back to the optimiser
-            self.gen_optimizer.tell(objs, bcs)
+            self.scheduler.tell(objs, bcs)
 
             # -- Increment the number of completed generations
             self.completed_generations += 1
@@ -66,7 +71,7 @@ class Evolver:
                 self._save()
 
     # --------------------- Private functions (not exposed to cli)
-    def _get_gen_sols_stats(self, gen_sols):
+    def _get_gen_sols_stats(self, gen_sols, init_states, fixed_tiles, binary_mask):
 
         # - Compute how many models can run simultaneously based
         # on the number of available cores
@@ -74,32 +79,29 @@ class Evolver:
         n_launches = np.ceil(n_sols / self.n_cores)
 
         # - Collect results (obj, bcs) for each model
-        # TODO: call set weights in here
         results = []
         for n_launch in range(int(n_launches)):
             futures = [
-                multi_evo.remote(
-                    self.env,
-                    self.gen_model,
-                    model_w,
-                    self.n_tile_types,
-                    init_states,
-                    self.bc_names,
-                    self.static_targets,
-                    self.env.unwrapped._reward_weights,
-                    fixed_tiles,
-                    seed,
-                    player_1=self.player_1,
-                    player_2=self.player_2,
-                    door_coords=self.door_coords,
+                simulate.remote(
+                        set_weights(self.gen_model, model_w),
+                        init_states,
+                        fixed_tiles,
+                        binary_mask,
+                        self.n_tiles,
+                        self.n_steps,
+                        self.overwrite 
                 )
                 for model_w in gen_sols[n_launch * self.n_cores: (n_launch+1) * self.n_cores]
             ]
             results += ray.get(futures)
             del futures
-            auto_garbage_collect()
+            self._auto_garbage_collect(80)
         
         # - Parse the results into the expected format
+        objs = [r[0] for r in results]
+        bcs = [r[1:] for r in results]
+
+        return objs, bcs
 
     def _load_fixed_tiles_arch(self):
         """
@@ -108,7 +110,7 @@ class Evolver:
         """
         if self.fixed_tiles:
             fxtiles_settings_path = os.path.join(self.settings_path, "fixed_tiles", f"{self.game}.npy")
-            self.fixed_tiles_arch = np.load(fxtiles_settings_path)
+            self.fixed_tiles_arch = np.load(fxtiles_settings_path).astype(int)
         else:
             self.fixed_tiles_arch = None
 
@@ -118,7 +120,7 @@ class Evolver:
         # 2D array where each cell contains int encoding tile type
         # Since we may have multiple seeds, the result is a 3D array
         init_states = np.random.randint(
-            low=0, high=self.n_tiles, size=(self.n_init_states, *self.grid_dim)
+            low=0, high=self.n_tiles, size=(self.n_init_states, self.grid_dim, self.grid_dim)
         )
 
         # - If certain tiles should be fixed,
@@ -199,6 +201,15 @@ class Evolver:
         for member_name, member_value in settings.items():
             setattr(self, member_name, member_value)
         
+        # -- Init ray for parallel processing
+        ray.init()
+
+        # -- Run some assertions
+        # --- Make sure that if you have fixed tiles you also have binary channel
+        c1 = self.fixed_tiles and self.binary_channel
+        c2 = not self.fixed_tiles and not self.binary_channel
+        assert c1 or c2, "You can either have both fixed inputs and binary enabled completely disabled. (nothing in between)"
+        
     def _show_exp_settings(self):
         exclude = ["logger", "save_path"]
         members = [[k, str(v)] for k, v in self.settings.items() if k not in exclude]
@@ -218,3 +229,7 @@ class Evolver:
         pickle.dump(
             self, open(os.path.join(self.save_path, "evolver.pkl"), "wb")
         ) 
+
+    def _auto_garbage_collect(self, pct=80.0):
+        if psutil.virtual_memory().percent >= pct:
+            gc.collect() 

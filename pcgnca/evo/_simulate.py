@@ -20,17 +20,29 @@ def simulate(
     n_steps,
     overwrite
 ):
+    states_copy = np.copy(init_states)
+    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite)
+
+def _simulate(
+    model,
+    init_states,
+    fixed_tiles,
+    binary_mask,
+    n_tile_types,
+    n_steps,
+    overwrite
+):
 
     # - Initialise the evaluator
-    evaluator = ZeldaEvaluation(binary_mask.shape[1])
+    evaluator = ZeldaEvaluation(init_states.shape[1])
  
     # - Let the model go over each init state for N steps
     # and collect the stats for each level generation
     batch_stats = []
     for state_i in range(len(init_states)):
-
+        init_states[state_i, 0, 0] = 1
         # -- Setup input for the model
-        if fixed_tiles:
+        if fixed_tiles is not None:
             in_tensor = _preprocess_input(init_states[state_i], n_tile_types, fixed_tiles[state_i], binary_mask[state_i], overwrite)
         else:
             in_tensor = _preprocess_input(init_states[state_i], n_tile_types)
@@ -41,13 +53,13 @@ def simulate(
             action = model(in_tensor)
 
             # -- Extract the level (now 2d int array)
-            level = th.argmax(action[0], dim=0)
+            level = th.argmax(action[0], dim=0).numpy()
 
             # -- Setup the input for the model again
-            if fixed_tiles:
-                in_tensor = _preprocess_input(init_states[state_i], n_tile_types, fixed_tiles[state_i], binary_mask[state_i], overwrite)
+            if fixed_tiles is not None:
+                in_tensor = _preprocess_input(level, n_tile_types, fixed_tiles[state_i], binary_mask[state_i], overwrite)
             else:
-                in_tensor = _preprocess_input(init_states[state_i], n_tile_types)
+                in_tensor = _preprocess_input(level, n_tile_types)
     
         # -- Compute stats about the level (e.g. how many enemies, doors, keys etc.)
         level_stats = evaluator.get_zelda_level_stats(level)
@@ -55,9 +67,9 @@ def simulate(
 
     
     # - Evaluate the batch of level stats
-    
+    obj, avg_symmetry, avg_path_len = evaluator.evaluate_level_batch(batch_stats)
 
-
+    return [[obj, avg_symmetry, avg_path_len]]
 
 def _preprocess_input(seed, n_tile_types, fixed=None, bin_mask=None, overwrite=False):
     
@@ -70,7 +82,9 @@ def _preprocess_input(seed, n_tile_types, fixed=None, bin_mask=None, overwrite=F
     seed_encoded = seed_encoded.transpose(2, 0, 1)
 
     # --- Add binary channel
-    seed_encoded = np.concatenate((seed_encoded, bin_mask), axis=0)
+    if bin_mask is not None:
+        bin_mask = bin_mask[np.newaxis, ...]
+        seed_encoded = np.concatenate((seed_encoded, bin_mask), axis=0)
 
     # --- Convert to the Tensory instead of nd array
     in_tensor = th.unsqueeze(th.Tensor(seed_encoded), 0)
