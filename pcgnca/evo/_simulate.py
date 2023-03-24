@@ -69,7 +69,7 @@ def _simulate(
     # - Evaluate the batch of level stats
     obj, avg_symmetry, avg_path_len = evaluator.evaluate_level_batch(batch_stats)
 
-    return [[obj, avg_symmetry, avg_path_len]]
+    return [obj, avg_symmetry, avg_path_len]
 
 def _preprocess_input(seed, n_tile_types, fixed=None, bin_mask=None, overwrite=False):
     

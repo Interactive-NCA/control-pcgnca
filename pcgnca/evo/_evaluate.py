@@ -62,9 +62,6 @@ class ZeldaEvaluation:
         symmetry_mean = np.array(symmetries).mean()
 
         # -- Path length
-        for s in batch_stats:
-            print(s)
-            print()
         path_lengths = [s["path_length"] for s in batch_stats]
         path_length_std = np.array(path_lengths).std()
         path_length_mean = np.array(path_lengths).mean()
@@ -118,6 +115,11 @@ class ZeldaEvaluation:
         # - Collect the stats into a dictionary
         stats = dict()
 
+        # - Set default values for path length and nearest enemy, if certain conditions are
+        # met, these will be overriden to some actual values.
+        stats["path_length"] = 0
+        stats["nearest_enemy"] = 0
+
         # - Count the number of occurences of certain entities
         entities = [("n_players", 2), ("n_keys", 3), ("n_doors", 4), ("n_bats", 5), ("n_spiders", 6), ("n_scorpions", 7)]
         for name, i in entities:
@@ -165,10 +167,6 @@ class ZeldaEvaluation:
                 # start point is key
                 dijkstra_d,_ = run_dijkstra(k_x, k_y, level, [i for i in range(8) if i != 1])
                 stats["path_length"] += dijkstra_d[d_y][d_x]
-        else:
-            stats["nearest_enemy"] = 0
-            stats["path_length"] = 0
-
 
         # - Calculate symmetry
         stats["symmetry"] = get_sym(level, self.dim)
