@@ -6,12 +6,16 @@ according to the given experiment settings.
 # --------------------- External libraries imports
 import gc
 import json
+from pathlib import Path
 import os
 import pickle
 
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 import psutil
 from ribs.archives import GridArchive
+from ribs.visualize import grid_archive_heatmap
 from ribs.schedulers import Scheduler
 from ribs.emitters import EvolutionStrategyEmitter
 from tqdm import tqdm
@@ -67,11 +71,78 @@ class Evolver:
             self.completed_generations += 1
 
             # -- Save the evolver if neccessary
-            if itr % 100:
+            if itr % self.save_freq:
                 self._save()
 
+    def evaluate_archive(self):
+        
+        # - Summarise the statistics about the trained archive
+        self._compute_trained_archive_stats()
+
+        # - Generate seeds
+
+
     # --------------------- Private functions (not exposed to cli)
+    def _compute_trained_archive_stats(self):
+        # - Compute the summary
+        trained_df = self.gen_archive.as_pandas()
+        stats = {
+            "objective" : self._get_metric_summary(trained_df["objective"]),
+            "n_sols" : len(trained_df),
+            "n_sols_possible": self.n_models_per_dim**len(self.bcs),
+            "Perc of archive filled": len(trained_df)/(self.n_models_per_dim**len(self.bcs))
+        }
+
+        # - Save the summary
+        # -- Make directory
+        dir_path = os.path.join(self.save_path, "training_summary")
+        os.makedirs(dir_path, exist_ok=True)
+
+        # -- Save the summary there as json
+        with open(os.path.join(dir_path, "stats.json"), "w") as f:
+            json.dump(
+                stats, f
+            )
+        
+        # - Create a visualisation of the archive
+        # -- Plot a heatmap of the archive.
+        fig, ax = plt.subplots(figsize=(8, 6))
+        grid_archive_heatmap(self.gen_archive, ax=ax)
+        ax.set_title("Objective function value across archive")
+        ax.set_xlabel(self.bcs[0])
+        ax.set_ylabel(self.bcs[1])
+        fig.savefig(os.path.join(dir_path, "obj_heatmap.png"))
+
+    def _get_metric_summary(self, metric):
+
+        # - Save the data to dict
+        summary = {}
+
+        # - Define stats to compute
+        stats = [
+            ("Sum (QD score)", pd.DataFrame.sum),
+            ("Mean", pd.DataFrame.mean),
+            ("Std", pd.DataFrame.std),
+            ("Min", pd.DataFrame.min),
+            ("Max", pd.DataFrame.max)
+        ]
+
+        # - Compute and save the stats
+        for stat_name, stat_fun in stats:
+
+            # -- Metric is pandas series
+            summary[stat_name] = stat_fun(metric)
+        
+        # - Return the stats
+        return summary
+
     def _get_gen_sols_stats(self, gen_sols, init_states, fixed_tiles, binary_mask):
+
+        # - Get bc weights - how important is each metric for the objective
+        obj_weights = {
+            "playability" : self.playability_weight,
+            "reliability": self.reliability_weight
+        }
 
         # - Compute how many models can run simultaneously based
         # on the number of available cores
@@ -89,7 +160,8 @@ class Evolver:
                         binary_mask,
                         self.n_tiles,
                         self.n_steps,
-                        self.overwrite 
+                        self.overwrite,
+                        obj_weights
                 )
                 for model_w in gen_sols[n_launch * self.n_cores: (n_launch+1) * self.n_cores]
             ]
@@ -170,7 +242,7 @@ class Evolver:
         # - Define archive
         self.gen_archive = GridArchive(
             solution_dim=len(initial_w),
-            dims=[100 for _ in self.bcs],
+            dims=[self.n_models_per_dim for _ in self.bcs],
             ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
         )
 

@@ -27,9 +27,9 @@ parser.add_argument('--gen-fixed-seeds', action='store_true', default=False)
 # --- Hyper-parameters for activities
 parser.add_argument('--n_cores', action='store', type=int)
 parser.add_argument('--n_generations', action='store', type=int)
-parser.add_argument('--save_freq', action='store', default=100, type=int)
+parser.add_argument('--save_freq', action='store', type=int)
 
-# ---- For fixed input seeds generation
+# --- For fixed input seeds generation
 parser.add_argument('--fixedgen-game', action='store')
 parser.add_argument('--fixedgen-nseeds', action='store', type=int)
 parser.add_argument('--fixedgen-difficulty', action='store')
@@ -37,31 +37,47 @@ parser.add_argument('--fixedgen-difficulty', action='store')
 # -- Parse the arguments
 args = parser.parse_args()
 
+# ------- Helper functions
+def load_evolver():
+
+    # -- Assertions
+    assert args.n_cores is not None, "You must specify --n_cores flag denoting how many cpu cores should be used"
+    assert args.n_generations is not None, "You must specify --n_generations flag denoting generations the archive should go through"
+    assert args.save_freq is not None, "You must specify --save_freq flag denoting how often the archive of models should be saved."
+
+    # -- Load settings and path to save the experiment related files
+    settings = get_settings(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH)
+    
+    # -- Merge the experiment settings with cli args
+    settings.update(vars(args))
+
+    # -- Get evolver
+    evolver = get_evolver(settings)
+
+    return evolver
+
 # ------- Execution based on flags
 def main():
 
     # TRAINING
     if args.train:
-
-        # -- Assertions
-        assert args.n_cores is not None, "You must specify --n_cores flag denoting how many cpu cores should be used"
-        assert args.n_generations is not None, "You must specify --n_generations flag denoting generations the archive should go through"
-
-        # -- Load settings and path to save the experiment related files
-        settings = get_settings(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH)
-        
-        # -- Merge the experiment settings with cli args
-        settings.update(vars(args))
-
-        # -- Get evolver
-        evolver = get_evolver(settings)
+        # -- Load evolver
+        evolver = load_evolver()
 
         # -- Finally, let the evolver do the training
         evolver.evolve()
+    else:
+        evolver = None
 
     # EVALUATION
     if args.evaluate:
-        pass
+
+        # -- Load evolver if neccesary
+        if evolver is None:
+            evolver = load_evolver()
+
+        # -- Finally, evaluate the evolver's archive
+        evolver.evaluate_archive()
 
     # GENERATION OF FIXED SEEDS
     if args.gen_fixed_seeds:

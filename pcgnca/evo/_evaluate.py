@@ -5,13 +5,13 @@ Module that includes functionality for evaluating generated levels.
 # --------------------- External libraries import
 import numpy as np
 
-
 class ZeldaEvaluation:
 
-    def __init__(self, dim):
+    def __init__(self, dim, obj_weights):
 
         # - User defined attributes
         self.dim = dim
+        self.obj_weights = obj_weights
 
         # - Game rules
         self.rules = {
@@ -57,17 +57,19 @@ class ZeldaEvaluation:
 
         # - Reliability
         # -- Symmetry
-        symmetries = [s["symmetry"] for s in batch_stats]
-        symmetry_std = np.array(symmetries).std()
-        symmetry_mean = np.array(symmetries).mean()
+        symmetries = self.normalise(np.array([s["symmetry"] for s in batch_stats]))
+        symmetries_norm = self.normalise(symmetries)
+        symmetry_std = np.array(symmetries_norm).std() # for objective func must be norm
+        symmetry_mean = np.array(symmetries).mean() # for archive where to place
 
         # -- Path length
-        path_lengths = [s["path_length"] for s in batch_stats]
-        path_length_std = np.array(path_lengths).std()
+        path_lengths = np.array([s["path_length"] for s in batch_stats])
+        path_lengths_norm = self.normalise(path_lengths)
+        path_length_std = np.array(path_lengths_norm).std()
         path_length_mean = np.array(path_lengths).mean()
 
-        # -- Compute reliability
-        reliability = (symmetry_std + path_length_std)/2
+        # -- Compute reliability penalty
+        reliability_penalty = -(symmetry_std + path_length_std)/2
 
         # - Playbility
         # we want to hit each of our rules exactly, penalize for anything else.
@@ -99,10 +101,10 @@ class ZeldaEvaluation:
 
             playability_penalties[i] = playability_penalty
         
-        final_playability_penalty = np.mean(playability_penalties)
+        final_playability_penalty = -np.mean(self.normalise(playability_penalties))
 
         # - Objective function calculation
-        objective = final_playability_penalty + reliability
+        objective = self.obj_weights["playability"]*final_playability_penalty + self.obj_weights["reliability"]*reliability_penalty
 
         return objective, symmetry_mean, path_length_mean
 
@@ -172,6 +174,21 @@ class ZeldaEvaluation:
         stats["symmetry"] = get_sym(level, self.dim)
 
         return stats
+    
+    def normalise(self, var):
+        """Use standard scaler to normalise given variable.
+        """
+
+        # - Mean and std
+        m = np.mean(var)
+        std = np.std(var)
+        if std == 0:
+            std = 0.0001
+
+        # - z-score
+        norm = (var - m)/std
+
+        return norm 
 
 # --------------------- Helper functions
 # ------------------------ Public functions

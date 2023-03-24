@@ -8,5 +8,8 @@
     "n_aux_chans": 8,
     "binary_channel": true,
     "fixed_tiles": true,
-    "overwrite": true
+    "overwrite": true,
+    "n_models_per_dim": 10,
+    "playability_weight": 1,
+    "reliability_weight": 1
 }
