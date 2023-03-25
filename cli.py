@@ -7,12 +7,13 @@ import json
 import os
 
 # ------- Internal library imports
-from pcgnca.utils import get_settings, get_evolver, generate_fixed_tiles
+from pcgnca.utils import get_settings, get_evolver, generate_fixed_tiles, get_experiments_summary
 
 # ------- Global vars definition
 SETTINGS_LOAD_PATH = "settings"
 EXPERIMENT_SAVE_PATH = "experiments"
 GRAPHICS_PATH = os.path.join("assets", "games")
+SUMMARIES_PATH = "summaries"
 
 # ------- CLI arguments definition
 parser = argparse.ArgumentParser(
@@ -22,14 +23,16 @@ parser = argparse.ArgumentParser(
 # --- Main activities
 parser.add_argument('--train', action='store_true', default=False)
 parser.add_argument('--evaluate', action='store_true', default=False)
+parser.add_argument('--summarise', action='store', type=str)
 parser.add_argument('--gen-fixed-seeds', action='store_true', default=False)
 
 # --- Hyper-parameters for activities
+# ---- General
 parser.add_argument('--n_cores', action='store', type=int)
 parser.add_argument('--n_generations', action='store', type=int)
 parser.add_argument('--save_freq', action='store', type=int)
 
-# --- For fixed input seeds generation
+# ---- For fixed input seeds generation
 parser.add_argument('--fixedgen-game', action='store')
 parser.add_argument('--fixedgen-nseeds', action='store', type=int)
 parser.add_argument('--fixedgen-difficulty', action='store')
@@ -78,6 +81,11 @@ def main():
 
         # -- Finally, evaluate the evolver's archive
         evolver.evaluate_archive()
+    
+    # MARKDOWN summary and comparioson of diffrent experiments
+    if args.summarise:
+        ids = [int(expid) for expid in args.summarise.split(",")]
+        get_experiments_summary(ids, EXPERIMENT_SAVE_PATH, SUMMARIES_PATH)
 
     # GENERATION OF FIXED SEEDS
     if args.gen_fixed_seeds:
