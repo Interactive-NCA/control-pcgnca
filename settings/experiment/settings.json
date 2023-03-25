@@ -9,7 +9,7 @@
     "binary_channel": true,
     "fixed_tiles": true,
     "overwrite": true,
-    "n_models_per_dim": 10,
+    "n_models_per_dim": 100,
     "playability_weight": 1,
     "reliability_weight": 1
 }

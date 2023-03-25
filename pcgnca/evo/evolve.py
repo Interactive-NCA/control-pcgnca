@@ -62,7 +62,7 @@ class Evolver:
             init_states, fixed_states, binary_mask = self._get_latent_seeds()
 
             # -- Run stats about each solutions' performance
-            objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask)
+            objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, extended_stats=False)
 
             # -- Send the stats back to the optimiser
             self.scheduler.tell(objs, bcs)
@@ -77,29 +77,122 @@ class Evolver:
     def evaluate_archive(self):
         
         # - Summarise the statistics about the trained archive
-        self._compute_trained_archive_stats()
+        self._compute_archive_stats(self.gen_archive, "training_summary", "objective")
 
-        # - Generate seeds
-
+        # - Summarise results for seeds with and without fixed tiles
+        self._compute_archive_stats_on_unseen_seeds()
 
     # --------------------- Private functions (not exposed to cli)
-    def _compute_trained_archive_stats(self):
+    def _compute_archive_stats_on_unseen_seeds(self):
+
+        # INITIAL setup
+        # -------------------- 
+        # - Retrieve solutions from the archive as pandas df
+        solutions = self.gen_archive.as_pandas()
+        model_weights = np.array(solutions.loc[:, "solution_0":])
+
+        # - Get setup of the evolver before going through evaluation
+        # This to ensure that the state of evolve before and after evalution is the same
+        fixed_tiles_archive = self.fixed_tiles_arch
+        bin_channel = self.binary_channel
+        model = self.gen_model
+
+        # FIXED tiles eval
+        # --------------------
+        # - Assertions of assumptions
+        # -- Make sure that fixed tiles archive is loaded
+        if self.fixed_tiles_arch is None:
+            self._load_fixed_tiles_arch() # it is now available under self.fixed_tiles_arch
+        
+        # -- Make sure the model can take into account bin channel
+        if not self.binary_channel:
+            self.binary_channel = True
+            self._init_model() # now the model with bin channle available under self.gen_model
+
+        # - Evaluate the archive on seeds with fixed tiles --> since the fixed
+        #   tiles archive is loaded, _get_latent_seeds knows to generate seeds with fixed tiles
+        # -- Generate the seeds
+        init_states, fixed_states, binary_mask = self._get_latent_seeds()
+
+        # -- Run and evaluate the models
+        df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, extended_stats=True)
+        
+        # -- Evalute the df and save the results
+        self._compute_eval_archive_stats(df, model_weights, fixed_seeds=True)
+
+
+        # NO FIXED tiles eval
+        # -------------------- 
+        # - Assertions
+        # -- Set the fixed tiles archive to none --> no fixed seeds
+        self.fixed_tiles_arch = None
+
+        # -- the model has no binary channel
+        self.binary_channel = False
+        self._init_model()
+
+        # - Evaluate the archive on seeds with NO fixed tiles
+        # -- Generate the seeds
+        init_states, fixed_states, binary_mask = self._get_latent_seeds()  # fixed states and bin mask is None
+        assert fixed_states is None and binary_mask is None, "Incorrect evaluation setup!"
+
+        # -- Run and evaluate the models
+        df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, extended_stats=True)
+        
+        # -- Evalute the df and save the results
+        self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False)
+
+        # CLEANUP
+        # --------------------
+        self.fixed_tiles_arch = fixed_tiles_archive 
+        self.binary_channel = bin_channel
+        self.gen_model = model
+
+    def _compute_eval_archive_stats(self, df, weights, fixed_seeds):
+
+        # - Define criteria of the archive to evaluate
+        criterias = ["objective", "playability", "reliability"]
+
+        # - Run evaluation of archive on that criteria
+        for criteria in criterias:
+
+            # -- Create a GridArchive based on the criteria
+            # --- Initiliase the archive
+            archive = GridArchive(
+                solution_dim=weights.shape[1],
+                dims=[self.n_models_per_dim for _ in self.bcs],
+                ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
+            )
+            # --- Add obtained solutions to the archive
+            archive.add(weights, df[criteria].to_numpy(), df[self.bcs].to_numpy())
+
+            # -- Get dir name where to save the results
+            fixed = "fixed_tiles_" if fixed_seeds else ""
+            dirname = fixed + "evaluation_summary"
+
+            # -- Finally evalutate the archive
+            self._compute_archive_stats(archive, dirname, criteria)
+
+    def _compute_archive_stats(self, archive, dirname, filename):
+
+        # - Get the archive as df
+        df = archive.as_pandas()
+
         # - Compute the summary
-        trained_df = self.gen_archive.as_pandas()
         stats = {
-            "objective" : self._get_metric_summary(trained_df["objective"]),
-            "n_sols" : len(trained_df),
+            "objective" : self._get_metric_summary(df["objective"]),
+            "n_sols" : len(df),
             "n_sols_possible": self.n_models_per_dim**len(self.bcs),
-            "Perc of archive filled": len(trained_df)/(self.n_models_per_dim**len(self.bcs))
+            "Perc of archive filled": 100*round(len(df)/(self.n_models_per_dim**len(self.bcs)), 2)
         }
 
         # - Save the summary
         # -- Make directory
-        dir_path = os.path.join(self.save_path, "training_summary")
+        dir_path = os.path.join(self.save_path, dirname)
         os.makedirs(dir_path, exist_ok=True)
 
         # -- Save the summary there as json
-        with open(os.path.join(dir_path, "stats.json"), "w") as f:
+        with open(os.path.join(dir_path, f"{filename}_stats.json"), "w") as f:
             json.dump(
                 stats, f
             )
@@ -108,10 +201,10 @@ class Evolver:
         # -- Plot a heatmap of the archive.
         fig, ax = plt.subplots(figsize=(8, 6))
         grid_archive_heatmap(self.gen_archive, ax=ax)
-        ax.set_title("Objective function value across archive")
+        ax.set_title(f"{filename} function value across archive")
         ax.set_xlabel(self.bcs[0])
         ax.set_ylabel(self.bcs[1])
-        fig.savefig(os.path.join(dir_path, "obj_heatmap.png"))
+        fig.savefig(os.path.join(dir_path, f"{filename}_heatmap.png"))
 
     def _get_metric_summary(self, metric):
 
@@ -136,7 +229,7 @@ class Evolver:
         # - Return the stats
         return summary
 
-    def _get_gen_sols_stats(self, gen_sols, init_states, fixed_tiles, binary_mask):
+    def _get_gen_sols_stats(self, gen_sols, init_states, fixed_tiles, binary_mask, extended_stats):
 
         # - Get bc weights - how important is each metric for the objective
         obj_weights = {
@@ -161,7 +254,8 @@ class Evolver:
                         self.n_tiles,
                         self.n_steps,
                         self.overwrite,
-                        obj_weights
+                        obj_weights,
+                        extended_stats
                 )
                 for model_w in gen_sols[n_launch * self.n_cores: (n_launch+1) * self.n_cores]
             ]
@@ -170,10 +264,13 @@ class Evolver:
             self._auto_garbage_collect(80)
         
         # - Parse the results into the expected format
-        objs = [r[0] for r in results]
-        bcs = [r[1:] for r in results]
-
-        return objs, bcs
+        if extended_stats:
+            df = pd.DataFrame.from_records(results, columns =["objective", "playability", "reliability"] + self.bcs)
+            return df
+        else:
+            objs = [r[0] for r in results]
+            bcs = [r[1:] for r in results]
+            return objs, bcs
 
     def _load_fixed_tiles_arch(self):
         """

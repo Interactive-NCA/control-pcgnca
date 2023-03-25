@@ -19,10 +19,11 @@ def simulate(
     n_tile_types,
     n_steps,
     overwrite,
-    obj_weights
+    obj_weights,
+    extended_stats
 ):
     states_copy = np.copy(init_states)
-    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite, obj_weights)
+    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite, obj_weights, extended_stats)
 
 def _simulate(
     model,
@@ -32,7 +33,8 @@ def _simulate(
     n_tile_types,
     n_steps,
     overwrite,
-    obj_weights
+    obj_weights,
+    extended_stats
 ):
 
     # - Initialise the evaluator
@@ -42,10 +44,17 @@ def _simulate(
     # and collect the stats for each level generation
     batch_stats = []
     for state_i in range(len(init_states)):
-        init_states[state_i, 0, 0] = 1
         # -- Setup input for the model
+        # --- Fixed tiles =
+        # ---- if ovewrite is true, ovewrite model's output in the position of fixed tiles if neccessary
+        # ---- add binary channel
+        # ---- Rest same as with no fixed tiles (see below)
         if fixed_tiles is not None:
             in_tensor = _preprocess_input(init_states[state_i], n_tile_types, fixed_tiles[state_i], binary_mask[state_i], overwrite)
+        
+        # --- NO fixed tiles =
+        # ---- One hot encode the channels
+        # ---- Convert the numpy array to PyTorch's tensor
         else:
             in_tensor = _preprocess_input(init_states[state_i], n_tile_types)
 
@@ -69,9 +78,7 @@ def _simulate(
 
     
     # - Evaluate the batch of level stats
-    obj, avg_symmetry, avg_path_len = evaluator.evaluate_level_batch(batch_stats)
-
-    return [obj, avg_symmetry, avg_path_len]
+    return evaluator.evaluate_level_batch(batch_stats, extended_stats)
 
 def _preprocess_input(seed, n_tile_types, fixed=None, bin_mask=None, overwrite=False):
     

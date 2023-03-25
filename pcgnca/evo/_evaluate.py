@@ -53,23 +53,21 @@ class ZeldaEvaluation:
                 for k, v in self._reward_weights.items()
         }
     
-    def evaluate_level_batch(self, batch_stats):
+    def evaluate_level_batch(self, batch_stats, extended_stats=False):
 
         # - Reliability
         # -- Symmetry
-        symmetries = self.normalise(np.array([s["symmetry"] for s in batch_stats]))
-        symmetries_norm = self.normalise(symmetries)
-        symmetry_std = np.array(symmetries_norm).std() # for objective func must be norm
-        symmetry_mean = np.array(symmetries).mean() # for archive where to place
+        symmetries = np.array([s["symmetry"] for s in batch_stats])
+        symmetry_std = np.array(symmetries).std()
+        symmetry_mean = np.array(symmetries).mean()
 
         # -- Path length
         path_lengths = np.array([s["path_length"] for s in batch_stats])
-        path_lengths_norm = self.normalise(path_lengths)
-        path_length_std = np.array(path_lengths_norm).std()
+        path_length_std = np.array(path_lengths).std()
         path_length_mean = np.array(path_lengths).mean()
 
         # -- Compute reliability penalty
-        reliability_penalty = -(symmetry_std + path_length_std)/2
+        final_reliability_penalty = -self.obj_weights["reliability"]*((symmetry_std + path_length_std)/2)
 
         # - Playbility
         # we want to hit each of our rules exactly, penalize for anything else.
@@ -101,12 +99,16 @@ class ZeldaEvaluation:
 
             playability_penalties[i] = playability_penalty
         
-        final_playability_penalty = -np.mean(self.normalise(playability_penalties))
+        final_playability_penalty = -self.obj_weights["playability"]*np.mean(playability_penalties)
 
         # - Objective function calculation
-        objective = self.obj_weights["playability"]*final_playability_penalty + self.obj_weights["reliability"]*reliability_penalty
+        objective = final_playability_penalty + final_reliability_penalty
 
-        return objective, symmetry_mean, path_length_mean
+        # - Return expected output
+        if extended_stats:
+            return [objective, final_playability_penalty, final_reliability_penalty, symmetry_mean, path_length_mean]
+        else:
+            return [objective, symmetry_mean, path_length_mean]
 
     def get_zelda_level_stats(self, level):
         """
