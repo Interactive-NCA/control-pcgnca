@@ -1,4 +1,6 @@
-## 🔮 About experiment(s)
+#### 🔮 About experiment(s)
+
+---
 
 |                    | Experiment 1                | Experiment 2                |
 |:-------------------|:----------------------------|:----------------------------|
@@ -15,5 +17,7 @@
 | n_models_per_dim   | 100                         | 100                         |
 | playability_weight | 10                          | 1                           |
 | reliability_weight | 1                           | 1                           |
+| bcs                | ['symmetry', 'path-length'] | ['symmetry', 'path-length'] |
+| bcs_bounds         | [[0, 1], [0, 271]]          | [[0, 1], [0, 271]]          |
 | n_tiles            | 8                           | 8                           |
 | grid_dim           | 16                          | 16                          |
