@@ -6,16 +6,19 @@ future==0.18.3
 importlib-metadata==4.11.3
 joblib==1.2.0
 llvmlite==0.39.1
+matplotlib==3.7.1
 numba==0.56.4
 numpy==1.21.6
 numpy-groupies==0.9.20
 pandas==1.2.3
+psutil==5.9.4
 pip==22.3.1
 pycparser==2.21
 Pygments==2.11.2
 python-dateutil==2.8.2
 pytz==2022.7.1
 PyYAML==6.0
+ray==2.3.1
 ribs==0.5.1
 rich==12.5.1
 scikit-learn==1.0.2
@@ -24,6 +27,7 @@ semantic-version==2.10.0
 setuptools==59.8.0
 six==1.16.0
 sortedcontainers==2.4.0
+tqdm==4.65.0
 threadpoolctl==3.1.0
 torch==1.12.1
 typing_extensions==4.4.0
