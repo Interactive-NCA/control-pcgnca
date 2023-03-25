@@ -6,6 +6,7 @@ future==0.18.3
 importlib-metadata==4.11.3
 joblib==1.2.0
 llvmlite==0.39.1
+matplotlib==3.7.1
 numba==0.56.4
 numpy==1.21.6
 numpy-groupies==0.9.20
