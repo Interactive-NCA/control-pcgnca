@@ -11,7 +11,7 @@ import pandas as pd
 def get_experiment_settings_summary(stats, expids):
 
     # - Get the heading
-    result = "#### 🔮 About experiment(s)\n\n"
+    result = "#### 🔮 About experiment(s)\n\n---\n\n"
 
     # - Get settings names
     settings_names = list(stats[expids[0]].keys())
@@ -117,6 +117,6 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
     settings_summary = get_experiment_settings_summary(data, experiment_ids)
 
     # - Save the markdown file
-    filename = os.path.join(save_path, "summary_of_exps_" + ",".join([str(expid) for expid in experiment_ids]))
+    filename = os.path.join(save_path, "summary_of_exps_" + "_".join([str(expid) for expid in experiment_ids]) + ".md")
     with open(filename, "w") as f:
         f.write(settings_summary)
