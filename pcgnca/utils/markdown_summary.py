@@ -11,7 +11,7 @@ import pandas as pd
 def get_experiment_settings_summary(stats, expids):
 
     # - Get the heading
-    result = "#### 🔮 About experiment(s)\n---\n"
+    result = "#### 🔮 About experiment(s)\n---\n\n"
 
     # - Get settings names
     settings_names = list(stats[expids[0]].keys())
