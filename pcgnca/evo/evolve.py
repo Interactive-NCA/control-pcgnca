@@ -6,7 +6,7 @@ according to the given experiment settings.
 # --------------------- External libraries imports
 import gc
 import json
-from pathlib import Path
+import shutil
 import os
 import pickle
 
@@ -77,6 +77,13 @@ class Evolver:
     def evaluate_archive(self):
         
         # - Summarise the statistics about the trained archive
+        # -- Remove the older folder if it exists indeed
+        try:
+            shutil.rmtree(os.path.join(self.save_path, "training_summary"))
+        except Exception:
+            pass
+
+        # -- Create the new folder with the fresh content
         self._compute_archive_stats(self.gen_archive, "training_summary", "objective")
 
         # - Summarise results for seeds with and without fixed tiles
@@ -153,6 +160,16 @@ class Evolver:
         # - Define criteria of the archive to evaluate
         criterias = ["objective", "playability", "reliability"]
 
+        # - Get dir name where to save the results
+        fixed = "fixed_tiles_" if fixed_seeds else ""
+        dirname = fixed + "evaluation_summary"
+
+        # - Erase the old directory if it exists
+        try:
+            shutil.rmtree(os.path.join(self.save_path, dirname))
+        except Exception:
+            pass
+
         # - Run evaluation of archive on that criteria
         for criteria in criterias:
 
@@ -166,10 +183,6 @@ class Evolver:
             # --- Add obtained solutions to the archive
             archive.add(weights, df[criteria].to_numpy(), df[self.bcs].to_numpy())
 
-            # -- Get dir name where to save the results
-            fixed = "fixed_tiles_" if fixed_seeds else ""
-            dirname = fixed + "evaluation_summary"
-
             # -- Finally evalutate the archive
             self._compute_archive_stats(archive, dirname, criteria)
 
@@ -180,10 +193,11 @@ class Evolver:
 
         # - Compute the summary
         stats = {
-            "objective" : self._get_metric_summary(df["objective"]),
-            "n_sols" : len(df),
-            "n_sols_possible": self.n_models_per_dim**len(self.bcs),
-            "Perc of archive filled": 100*round(len(df)/(self.n_models_per_dim**len(self.bcs)), 2)
+            filename : self._get_metric_summary(df["objective"]),
+            "N. Solutions" : len(df),
+            "N. Solutions Possible": self.n_models_per_dim**len(self.bcs),
+            "Perc. of Archive Filled": 100*round(len(df)/(self.n_models_per_dim**len(self.bcs)), 2),
+            "Number of generations": self.completed_generations
         }
 
         # - Save the summary
@@ -200,11 +214,11 @@ class Evolver:
         # - Create a visualisation of the archive
         # -- Plot a heatmap of the archive.
         fig, ax = plt.subplots(figsize=(8, 6))
-        grid_archive_heatmap(self.gen_archive, ax=ax)
+        grid_archive_heatmap(self.gen_archive, ax=ax, vmin=0, vmax=-25)
         ax.set_title(f"{filename} function value across archive")
         ax.set_xlabel(self.bcs[0])
         ax.set_ylabel(self.bcs[1])
-        fig.savefig(os.path.join(dir_path, f"{filename}_heatmap.png"))
+        fig.savefig(os.path.join(dir_path, f"{filename}.png"))
 
     def _get_metric_summary(self, metric):
 
@@ -385,6 +399,8 @@ class Evolver:
         self.logger.show_table("", ["Parameter", "Value"], members)
 
     def _save(self):
+
+        # Save the 
 
         # Nothing to be saved
         if self.completed_generations is None:

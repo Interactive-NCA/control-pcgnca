@@ -7,7 +7,8 @@ import json
 import os
 
 # ------- Internal library imports
-from pcgnca.utils import get_settings, get_evolver, generate_fixed_tiles, get_experiments_summary
+from pcgnca.utils import get_settings, get_evolver, generate_fixed_tiles, \
+get_experiments_summary, from_experimentid_to_evolver
 
 # ------- Global vars definition
 SETTINGS_LOAD_PATH = "settings"
@@ -22,7 +23,7 @@ parser = argparse.ArgumentParser(
 # -- Extraction flags
 # --- Main activities
 parser.add_argument('--train', action='store_true', default=False)
-parser.add_argument('--evaluate', action='store_true', default=False)
+parser.add_argument('--evaluate', action='store', type=str)
 parser.add_argument('--summarise', action='store', type=str)
 parser.add_argument('--gen-fixed-seeds', action='store_true', default=False)
 
@@ -41,23 +42,32 @@ parser.add_argument('--fixedgen-difficulty', action='store')
 args = parser.parse_args()
 
 # ------- Helper functions
-def load_evolver():
+def load_evolver(expid=None):
 
-    # -- Assertions
+    # - Common assertions
     assert args.n_cores is not None, "You must specify --n_cores flag denoting how many cpu cores should be used"
-    assert args.n_generations is not None, "You must specify --n_generations flag denoting generations the archive should go through"
-    assert args.save_freq is not None, "You must specify --save_freq flag denoting how often the archive of models should be saved."
 
-    # -- Load settings and path to save the experiment related files
-    settings = get_settings(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH)
+    # - Load the evolver based on settings.json file
+    if not expid:
+        # - Specif assertions
+        assert args.n_generations is not None, "You must specify --n_generations flag denoting generations the archive should go through"
+        assert args.save_freq is not None, "You must specify --save_freq flag denoting how often the archive of models should be saved."
+
+        # -- Load settings and path to save the experiment related files
+        settings = get_settings(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH)
+        
+        # -- Merge the experiment settings with cli args
+        settings.update(vars(args))
+
+        # -- Get evolver
+        evolver = get_evolver(settings)
+
+        return evolver
+    else:
+        # - Load the evolver based on the expids
+        evolver = from_experimentid_to_evolver(EXPERIMENT_SAVE_PATH, expid, vars(args))
     
-    # -- Merge the experiment settings with cli args
-    settings.update(vars(args))
-
-    # -- Get evolver
-    evolver = get_evolver(settings)
-
-    return evolver
+        return evolver
 
 # ------- Execution based on flags
 def main():
@@ -69,15 +79,11 @@ def main():
 
         # -- Finally, let the evolver do the training
         evolver.evolve()
-    else:
-        evolver = None
 
     # EVALUATION
     if args.evaluate:
-
-        # -- Load evolver if neccesary
-        if evolver is None:
-            evolver = load_evolver()
+        # - Load evolver
+        evolver = load_evolver(args.evaluate)
 
         # -- Finally, evaluate the evolver's archive
         evolver.evaluate_archive()

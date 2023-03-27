@@ -1,96 +1,18 @@
 """
 Module for automatic creation of markdown summaries about
-the experiments' results.
+the experiments' results. The idea is that you can summarise
+one or more experiments at once.
 """
 
+# --------------------- External libraries import
 import json
 import os
 import pandas as pd
 
-
-def get_experiment_settings_summary(stats, expids):
-
-    # - Get the heading
-    result = "#### 🔮 About experiment(s)\n\n---\n\n"
-
-    # - Get settings names
-    settings_names = list(stats[expids[0]].keys())
-
-    # - Collect the stats to dict which is then turned into pandas df
-    data = dict()
-
-    for i, settings_name in enumerate(settings_names):
-        row = []
-        for expid in expids:
-            v = stats[expid][settings_name]
-            v = v if v is not None else "0"
-            row.append(v)
-        data[settings_name] = row
-
-    columns = [f"Experiment {i}" for i in expids] 
-    df = pd.DataFrame.from_dict(data, orient='index', columns=columns)
-
-    return result + df.to_markdown() + "\n"
-
-def get_eval_summary(stats):
-
-    sec1 = "#### 📊 General Evaluation Stats\n"
-    sec1_expl = "Each model from the training archive is evaluated in two ways. First, on the latent seeds seen during training. Second, on 20 randomly generated seeds.\n"
-    expids = [1, 2] if "experiment2" in stats.keys() else [1]
-    sec1_data = dict()
-
-    sec1_stats = ["archive size", "% fresh train archive full", "eval QD score", "% elites maintained", "% QD score maintained"]
-    sec1_row_names = ["Archive Size", "Perc Of Archive Filled", "QD Score", "Perc Elites Maintained", "Perc QD Score Maintained"]
-    for i, stat in enumerate(sec1_stats):
-        row = []
-        for expid in expids:
-            expname = f"experiment{expid}"
-            row.extend([stats[expname]["train"][stat], stats[expname]["eval"][stat]])
-        row = [item*100 for item in row] if "perc" in sec1_row_names[i].lower() else row
-        sec1_data[f"{sec1_row_names[i]}"] = row
-
-    sec1_stats = ["playability", "reliability", "diversity"]
-    for i, stat in enumerate(sec1_stats):
-        row = []
-        for expid in expids:
-            row.extend([stats[expname]["train"][stat]["mean"], stats[expname]["eval"][stat]["mean"]])
-        sec1_data[f"{stat}-mean"] = row
-
-    columns = ["Exp1 Train", "Exp1 Eval", "Exp2 Train", "Exp2 Eval"] if len(expids) > 1 else ["Exp1 Train", "Exp1 Eval"]
-    sec1_df = pd.DataFrame.from_dict(sec1_data, orient='index', columns=columns)
-    return sec1 + sec1_expl + sec1_df.to_markdown() + "\n"
-
-def get_training_process_stats(stats):
-    sec0 = "#### 🔖 Training Process Stats\n"
-    sec0_expl = "Summary about the trained archive. Note that QD score is just a sum of all objective values of models in the archive.\n"
-    expids = [1, 2] if "experiment2" in stats.keys() else [1]
-    sec0_data = {
-        "# of Generations" : [stats[f"experiment{i}"]["generations completed"] for i in expids],
-        "Perc of Archive Filled": [100*stats[f"experiment{i}"]["% train archive full"] for i in expids],
-        "QD Score": [stats[f"experiment{i}"]["QD score"] for i in expids],
-        "Mean objective": [stats[f"experiment{i}"]["objective"]["mean"] for i in expids]
-    }
-
-    sec0_df = pd.DataFrame.from_dict(sec0_data, orient='index', columns=[f"Experiment {i}" for i in expids])
-    return sec0 + sec0_expl + sec0_df.to_markdown() + "\n"
-
-def get_viz(path):
-
-    # Adjust the path so it is relative to where the summary will be stored
-    path = "../.." + path.split("assets")[1]
-
-    names = ["fitness_eval", "diversity", "playability", "reliability"]
-    train_names = [f"![]({path}/{name}_fixLvls.png)" for name in names]
-    eval_names = [f"![]({path}/{name}.png)" for name in names]
-    data = {
-        "training" : train_names,
-        "eval": eval_names
-    }
-    df = pd.DataFrame.from_dict(data, orient='index', columns=names)
-    return df.to_markdown() + "\n"
-
+# --------------------- Public functions
 def get_experiments_summary(experiment_ids, experiments_path, save_path):
 
+    # -------- SETUP
     # - Based on IDs, get paths of experiment to evaluate
     paths = []
     all_experiments = os.listdir(experiments_path)
@@ -100,23 +22,137 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
                 path = os.path.join(experiments_path, exp_filename)
                 paths.append((expid, path,))
                 break
-    
+
+    # ------------- MAIN SECTION
+    final_result = ""
+
+    # -------- EXPERIMENT SETTINGS SUMMARY
+    # - Heading
+    heading = "### 🔮 About experiment(s)\n\n---\n\n"
+    # - Collect the data about settings first
+    data = _load_experiment_results(paths, "settings.json")
+    # - Get the markdown summary 
+    final_result += (heading + _get_experiment_results_summary(data, experiment_ids))
+
+    # -------- TRAINING RESULTS SUMMARY
     # - Get experiment settings summary
-    # -- Collect the data about settings first
+    heading = "### 🔖 Training Process Summary\n\n---\n\n"
+    # - Collect the data about settings first
+    data = _load_experiment_results(paths, os.path.join("training_summary", "objective_stats.json"))
+    # - Also the figures
+    figures = _add_figures(paths, [os.path.join("training_summary", "objective.png")], experiment_ids)
+    # - Get the markdown summary 
+    final_result += (heading + _get_experiment_results_summary(data, experiment_ids) + figures)
+
+    # -------- SAVE THE RESULTING MD DOC
+    # - Save the markdown file
+    filename = os.path.join(save_path, "summary_of_exps_" + "_".join([str(expid) for expid in experiment_ids]) + ".md")
+    with open(filename, "w") as f:
+        f.write(final_result)
+
+# --------------------- Private functions
+def _add_figures(exp_paths, figure_paths, expids):
+    # - Save the paths of figures to data dict
     data = dict()
-    for expid, path in paths:
+
+    # - Collect the data
+    for fig_path in figure_paths:
+
+        # -- Get the path of figures in the given row
+        row = []
+        for expid, exp_path in exp_paths:
+            p = f"![]({os.path.join('..', exp_path, fig_path)})"
+            row.append(p)
+
+        # -- Get the name of the row
+        row_name = fig_path.split(os.sep)[-1][:-4]
+        data[row_name] = row
+    
+    # - Convert the df to markdown
+    columns = [f"Experiment {i}" for i in expids]  
+    result = pd.DataFrame.from_dict(data, orient='index', columns=columns).to_markdown()
+
+    return result + "\n\n"
+
+def _load_experiment_results(experiment_paths, result_path):
+
+    data = dict()
+    for expid, exp_path in experiment_paths:
 
         # --- Load the settings into a dict
-        settings_path = os.path.join(path, "settings.json")
-        with open(settings_path) as f:
+        final_path = os.path.join(exp_path, result_path)
+        with open(final_path) as f:
             d = json.load(f)
 
         # --- Save it to our data dict
         data[expid] = d
-    
-    settings_summary = get_experiment_settings_summary(data, experiment_ids)
 
-    # - Save the markdown file
-    filename = os.path.join(save_path, "summary_of_exps_" + "_".join([str(expid) for expid in experiment_ids]) + ".md")
-    with open(filename, "w") as f:
-        f.write(settings_summary)
+    return data
+
+def _extract_nested_results(nested_results, expids):
+
+    # - Save the results in dict where each key is row name
+    # and each values includes row values
+    result = dict()
+
+    # - Go over all nested results
+    for high_level_name, results in nested_results.items():
+
+        # -- Extract the the row names
+        result_names = list(results[expids[0]].keys())
+        for i, result_name in enumerate(result_names):
+            row = []
+
+            # -- Finally, check the value of the result in each experiment
+            for expid in expids:
+                v = results[expid][result_name]
+                v = v if v is not None else "0"
+                row.append(v)
+            result[high_level_name.upper() + " " + result_name] = row
+
+    return result
+
+def _get_experiment_results_summary(stats, expids):
+
+    # - Save the data into a dict
+    # where key is row name and values are row values
+    data = dict()
+
+    # - Get result names
+    result_names = list(stats[expids[0]].keys())
+
+    # - Collect nested results for later evaluation
+    nested_results = dict()
+
+    # - Do first round of parsing
+    for i, result_name in enumerate(result_names):
+        row = []
+        for expid in expids:
+
+            # -- Extract the value
+            v = stats[expid][result_name]
+
+            # -- Perform further actions
+            # --- Nested result - save for later processing
+            if type(v) == dict:
+                if nested_results.get(result_name) is None:
+                    nested_results[result_name] = {expid : v}
+                else:
+                    nested_results[result_name][expid] = v
+            # --- Normal, save it straight away
+            else:
+                v = v if v is not None else "0"
+                row.append(v)
+
+        # - Only the row is non emtpy
+        if len(row) > 0:
+            data[result_name] = row
+
+    # - Do second round of parsing
+    data.update(_extract_nested_results(nested_results, expids))
+
+    # - Turn the data into markdown via pandas 
+    columns = [f"Experiment {i}" for i in expids] 
+    final_result = pd.DataFrame.from_dict(data, orient='index', columns=columns).to_markdown()
+
+    return final_result + "\n\n"

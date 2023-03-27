@@ -1,4 +1,4 @@
-from .settings import get_settings, get_evolver
+from .settings import get_settings, get_evolver, from_experimentid_to_evolver
 from .logging import ScriptInformation
 from .visualise import ZeldaLevelViz
 from .fixed_inputs import generate_fixed_tiles
@@ -10,5 +10,6 @@ __all__ = [
     "ScriptInformation",
     "ZeldaLevelViz",
     "generate_fixed_tiles",
-    "get_experiments_summary"
+    "get_experiments_summary",
+    "from_experimentid_to_evolver"
 ]
