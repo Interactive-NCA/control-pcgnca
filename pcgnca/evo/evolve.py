@@ -296,7 +296,7 @@ class Evolver:
         levels.
         """
         if self.fixed_tiles:
-            fxtiles_settings_path = os.path.join(self.settings_path, "fixed_tiles", f"{self.game}2.npy")
+            fxtiles_settings_path = os.path.join(self.settings_path, "fixed_tiles", f"manual_{self.game}.npy")
             self.fixed_tiles_arch = np.fromfile(fxtiles_settings_path, dtype=np.int32).reshape((-1, self.grid_dim, self.grid_dim))
             #self.fixed_tiles_arch = np.load(fxtiles_settings_path).astype(int)
         else:
