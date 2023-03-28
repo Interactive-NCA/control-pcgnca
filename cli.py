@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser(
 # -- Extraction flags
 # --- Main activities
 parser.add_argument('--train', action='store_true', default=False)
-parser.add_argument('--evaluate', action='store', type=str)
+parser.add_argument('--evaluate', action='store_true', default=False)
 parser.add_argument('--summarise', action='store', type=str)
 parser.add_argument('--gen-fixed-seeds', action='store_true', default=False)
 

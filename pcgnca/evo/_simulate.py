@@ -38,7 +38,7 @@ def _simulate(
 ):
 
     # - Initialise the evaluator
-    evaluator = ZeldaEvaluation(init_states.shape[1], obj_weights)
+    evaluator = ZeldaEvaluation(init_states.shape[1], obj_weights, n_tile_types)
  
     # - Let the model go over each init state for N steps
     # and collect the stats for each level generation

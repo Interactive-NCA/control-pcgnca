@@ -61,7 +61,7 @@ class Evolver:
             # -- Get latent seeds
             init_states, fixed_states, binary_mask = self._get_latent_seeds()
 
-            # -- Run stats about each solutions' performance
+            # -- Get stats about each solutions' performance
             objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, extended_stats=False)
 
             # -- Send the stats back to the optimiser

@@ -7,11 +7,18 @@ import numpy as np
 
 class ZeldaEvaluation:
 
-    def __init__(self, dim, obj_weights):
+    def __init__(self, dim, obj_weights, n_tiles):
 
         # - User defined attributes
         self.dim = dim
         self.obj_weights = obj_weights
+        self.n_tiles = n_tiles
+
+        # - Should enemies be excluded from playability penalty
+        if self.n_tiles == 8:
+            self.exclude_enemy = False
+        else:
+            self.exclude_enemy = True
 
         # - Game rules
         self.rules = {
@@ -78,7 +85,14 @@ class ZeldaEvaluation:
 
             playability_penalty = 0
 
+            # -- Note: only go over stats computed
+            # --> for instance if enemies are excluded from stats then we do not
+            # consider them into playbility penalty. 
             for k in self.rules:
+
+                # --- Avoid rules that are not in stats
+                if stats.get(k) is None:
+                    continue
 
                 # --- Range
                 # Example:
@@ -122,7 +136,6 @@ class ZeldaEvaluation:
         # - Set default values for path length and nearest enemy, if certain conditions are
         # met, these will be overriden to some actual values.
         stats["path_length"] = 0
-        stats["nearest_enemy"] = 0
 
         # - Count the number of occurences of certain entities
         entities = [("n_players", 2), ("n_keys", 3), ("n_doors", 4), ("n_bats", 5), ("n_spiders", 6), ("n_scorpions", 7)]
@@ -130,46 +143,54 @@ class ZeldaEvaluation:
             stats[name] = (level == i).sum()
 
         # - Group the enemies count
-        stats["n_enemies"] = stats["n_bats"] + stats["n_spiders"] + stats["n_scorpions"]
+        if not self.exclude_enemy:
+            stats["n_enemies"] = stats["n_bats"] + stats["n_spiders"] + stats["n_scorpions"]
 
         # - Calculate number of the regions
-        tiles_loc = get_tile_locations(level, [i for i in range(8)])
-        stats["n_regions"] = calc_num_regions(level, tiles_loc, [i for i in range(8) if i != 1])
+        tiles_loc = get_tile_locations(level, [i for i in range(self.n_tiles)])
+        stats["n_regions"] = calc_num_regions(level, tiles_loc, [i for i in range(self.n_tiles) if i != 1])
 
         # - Calculate distance from nearest enemy and solution path length (if possible)
         if stats["n_players"] == 1 and stats["n_regions"] == 1:
 
             # -- Distance from the nearest enemy
-            # --- Get the position of the zelda
-            p_x, p_y = tiles_loc[2][0]
+            if not self.exclude_enemy:
+                # --- Get the position of the zelda
+                p_x, p_y = tiles_loc[2][0]
 
-            # --- Collect all the enemies position in the map
-            enemies = []
-            enemies.extend(tiles_loc[5])
-            enemies.extend(tiles_loc[6])
-            enemies.extend(tiles_loc[7])
+                # --- Collect all the enemies position in the map
+                enemies = []
+                enemies.extend(tiles_loc[5])
+                enemies.extend(tiles_loc[6])
+                enemies.extend(tiles_loc[7])
 
 
-            # --- Compute shortest path from the zelda to each enemy and then find the min distance
-            if len(enemies) > 0:
-                dijkstra,_ = run_dijkstra(p_x, p_y, level, [i for i in range(8) if i not in [1, 4]])
-                min_dist = self.dim*self.dim
-                for e_x,e_y in enemies:
-                    if dijkstra[e_y][e_x] > 0 and dijkstra[e_y][e_x] < min_dist:
-                        min_dist = dijkstra[e_y][e_x]
-                stats["nearest_enemy"] = min_dist
+                # --- Compute shortest path from the zelda to each enemy and then find the min distance
+                if len(enemies) > 0:
+                    dijkstra,_ = run_dijkstra(p_x, p_y, level, [i for i in range(self.n_tiles) if i not in [1, 4]])
+                    min_dist = self.dim*self.dim
+                    for e_x,e_y in enemies:
+                        if dijkstra[e_y][e_x] > 0 and dijkstra[e_y][e_x] < min_dist:
+                            min_dist = dijkstra[e_y][e_x]
+                    stats["nearest_enemy"] = min_dist
 
             # -- Compute the solution path length
             if stats["n_keys"] == 1 and stats["n_doors"] == 1:
+
+                # --- Get the position of
+                # ----- Zelda
+                p_x, p_y = tiles_loc[2][0]
+                # ----- Key
                 k_x, k_y = tiles_loc[3][0]
+                # ----- Door
                 d_x, d_y = tiles_loc[4][0]
 
-                # start point is people
-                dijkstra_k, _ = run_dijkstra(p_x, p_y, level, [i for i in range(8) if i not in [1, 4]])
+                # start point is zelda
+                dijkstra_k, _ = run_dijkstra(p_x, p_y, level, [i for i in range(self.n_tiles) if i not in [1, 4]])
                 stats["path_length"] += dijkstra_k[k_y][k_x]
 
                 # start point is key
-                dijkstra_d,_ = run_dijkstra(k_x, k_y, level, [i for i in range(8) if i != 1])
+                dijkstra_d,_ = run_dijkstra(k_x, k_y, level, [i for i in range(self.n_tiles) if i != 1])
                 stats["path_length"] += dijkstra_d[d_y][d_x]
 
         # - Calculate symmetry
