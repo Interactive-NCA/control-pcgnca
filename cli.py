@@ -32,6 +32,7 @@ parser.add_argument('--gen-fixed-seeds', action='store_true', default=False)
 parser.add_argument('--n_cores', action='store', type=int)
 parser.add_argument('--n_generations', action='store', type=int)
 parser.add_argument('--save_freq', action='store', type=int)
+parser.add_argument('--expid', action='store', type=int, default=None)
 
 # ---- For fixed input seeds generation
 parser.add_argument('--fixedgen-game', action='store')
@@ -44,15 +45,17 @@ args = parser.parse_args()
 # ------- Helper functions
 def load_evolver(expid=None):
 
-    # - Common assertions
+    # - Assertions
+    # -- Common assertions
     assert args.n_cores is not None, "You must specify --n_cores flag denoting how many cpu cores should be used"
 
-    # - Load the evolver based on settings.json file
-    if not expid:
-        # - Specif assertions
+    # -- Assertions for train
+    if args.train:
         assert args.n_generations is not None, "You must specify --n_generations flag denoting generations the archive should go through"
         assert args.save_freq is not None, "You must specify --save_freq flag denoting how often the archive of models should be saved."
 
+    # -- Load the evolver based on settings.json file
+    if not expid:
         # -- Load settings and path to save the experiment related files
         settings = get_settings(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH)
         
@@ -63,8 +66,9 @@ def load_evolver(expid=None):
         evolver = get_evolver(settings)
 
         return evolver
-    else:
-        # - Load the evolver based on the expids
+
+    # - Load the evolver based on the expids
+    else:  
         evolver = from_experimentid_to_evolver(EXPERIMENT_SAVE_PATH, expid, vars(args))
     
         return evolver
@@ -75,7 +79,7 @@ def main():
     # TRAINING
     if args.train:
         # -- Load evolver
-        evolver = load_evolver()
+        evolver = load_evolver(args.expid)
 
         # -- Finally, let the evolver do the training
         evolver.evolve()
@@ -83,7 +87,7 @@ def main():
     # EVALUATION
     if args.evaluate:
         # - Load evolver
-        evolver = load_evolver(args.evaluate)
+        evolver = load_evolver(args.expid)
 
         # -- Finally, evaluate the evolver's archive
         evolver.evaluate_archive()

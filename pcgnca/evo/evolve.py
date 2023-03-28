@@ -71,7 +71,7 @@ class Evolver:
             self.completed_generations += 1
 
             # -- Save the evolver if neccessary
-            if itr % self.save_freq:
+            if (itr % self.save_freq) == 0:
                 self._save()
 
     def evaluate_archive(self):
@@ -212,13 +212,17 @@ class Evolver:
             )
         
         # - Create a visualisation of the archive
-        # -- Plot a heatmap of the archive.
+        title = f"{filename} function value across archive"
+        fig = self._get_archive_heatmap(title)
+        fig.savefig(os.path.join(dir_path, f"{filename}.png"))
+    
+    def _get_archive_heatmap(self, title):
         fig, ax = plt.subplots(figsize=(8, 6))
         grid_archive_heatmap(self.gen_archive, ax=ax, vmin=0, vmax=-25)
-        ax.set_title(f"{filename} function value across archive")
+        ax.set_title(title)
         ax.set_xlabel(self.bcs[0])
         ax.set_ylabel(self.bcs[1])
-        fig.savefig(os.path.join(dir_path, f"{filename}.png"))
+        return fig
 
     def _get_metric_summary(self, metric):
 
@@ -400,20 +404,33 @@ class Evolver:
 
     def _save(self):
 
-        # Save the 
+        # - Save the archive as csv
+        df = self.gen_archive.as_pandas()
+        df.to_csv(os.path.join(self.save_path, "trained_archive.csv"))
 
-        # Nothing to be saved
-        if self.completed_generations is None:
-            return
+        # - Save the heatmap of the archive
+        # -- Check the folder exists
+        archive_snaps_path = os.path.join(self.save_path, "archive_snaps")
+        if not os.path.exists(archive_snaps_path):
+            os.mkdir(archive_snaps_path)
+        
+        # -- Get the figure and save it
+        n_gens = self.completed_generations if self.completed_generations else 0 
+        title = f"After {n_gens} generations"
+        fig = self._get_archive_heatmap(title)
+        fig.savefig(os.path.join(archive_snaps_path, f"ngens_{n_gens}.png")) 
 
-        # Before saving, get rid of unpickable members
-        self.logger = None
-        self.settings = None
+        # - Save the evolver 
+        if self.completed_generations is not None:
 
-        # Save the object via pickle 
-        pickle.dump(
-            self, open(os.path.join(self.save_path, "evolver.pkl"), "wb")
-        ) 
+            # Before saving, get rid of unpickable members
+            self.logger = None
+            self.settings = None
+
+            # Save the object via pickle 
+            pickle.dump(
+                self, open(os.path.join(self.save_path, "evolver.pkl"), "wb")
+            ) 
 
     def _auto_garbage_collect(self, pct=80.0):
         if psutil.virtual_memory().percent >= pct:

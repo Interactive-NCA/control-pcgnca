@@ -44,6 +44,12 @@
 
 <br/>
 
+|          | Experiment 1                                                                                                                                                                                                                                                          | Experiment 2                                                                                                                                                                                                                                                         |
+|:---------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| timeline | ![](../experiments/ExperimentId-1_Game-zelda_ModelName-NCA_StepSize-0.05_FixSeeds-False_NInitStates-10_NSteps-30_NAuxChans-8_BinaryChannel-True_FixedTiles-True_Overwrite-True_NModelsPerDim-100_PlayabilityWeight-10_ReliabilityWeight-1/archive_snaps/timeline.gif) | ![](../experiments/ExperimentId-2_Game-zelda_ModelName-NCA_StepSize-0.05_FixSeeds-False_NInitStates-10_NSteps-30_NAuxChans-8_BinaryChannel-True_FixedTiles-True_Overwrite-True_NModelsPerDim-100_PlayabilityWeight-1_ReliabilityWeight-1/archive_snaps/timeline.gif) |
+
+<br/>
+
 ### 🎯 Evaluation on seeds WITH Fixed tiles
 
 ---

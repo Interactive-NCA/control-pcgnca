@@ -7,7 +7,10 @@ one or more experiments at once.
 # --------------------- External libraries import
 import json
 import os
+import glob
 import pandas as pd
+
+from PIL import Image
 
 # --------------------- Public functions
 def get_experiments_summary(experiment_ids, experiments_path, save_path):
@@ -41,8 +44,19 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
     data = _load_experiment_results(paths, os.path.join("training_summary", "objective_stats.json"))
     # - Also the figures
     figures = _add_figures(paths, [os.path.join("training_summary", "objective.png")], experiment_ids)
+    # - And gifs
+    # -- Generate gifs
+    timeline_fold_paths = [os.path.join(base, "archive_snaps") for _, base in paths]
+    gif_paths = [_add_archive_timeline(fold_path) for fold_path in timeline_fold_paths]
+
+    # -- Only add gifs if all experiments have them
+    if None not in gif_paths:
+        gifs = _add_figures(paths, [os.path.join("archive_snaps", "timeline.gif")], experiment_ids)
+    else:
+        gifs = ""
+
     # - Get the markdown summary 
-    final_result += (heading + _get_experiment_results_summary(data, experiment_ids) + figures)
+    final_result += (heading + _get_experiment_results_summary(data, experiment_ids) + figures + gifs)
 
     # -------- EVALUATION RESULTS
     # - Define the section's structure
@@ -180,3 +194,15 @@ def _get_experiment_results_summary(stats, expids):
     final_result = pd.DataFrame.from_dict(data, orient='index', columns=columns).to_markdown()
 
     return final_result + "\n\n"
+
+def _add_archive_timeline(frame_folder):
+    paths = sorted(glob.glob(f"{frame_folder}/*.png"))
+    frames = [Image.open(image) for image in paths]
+    duration = 20*int(len(frames)/1)
+    if len(frames) > 0:
+        frame_one = frames[0]
+        path = os.path.join(frame_folder, "timeline.gif")
+        frame_one.save(path, format="GIF", append_images=frames, save_all=True, duration=duration, loop=0)
+        return path
+    else:
+        return None
