@@ -45,20 +45,26 @@ def _simulate(
     batch_stats = []
     for state_i in range(len(init_states)):
         # -- Setup input for the model
-        # --- Fixed tiles =
+        # --- Fixed tiles with bin mask =
         # ---- if ovewrite is true, ovewrite model's output in the position of fixed tiles if neccessary
         # ---- add binary channel
         # ---- Rest same as with no fixed tiles (see below)
-        if fixed_tiles is not None:
+        if fixed_tiles is not None and binary_mask is not None:
             in_tensor = _preprocess_input(init_states[state_i], n_tile_types, fixed_tiles[state_i], binary_mask[state_i], overwrite)
+
+        # --- Only bin mask =
+        # ---- Add bin channel
+        # ---- Rest same as with no fixed tiles
+        elif binary_mask is not None:
+            in_tensor = _preprocess_input(init_states[state_i], n_tile_types, None, binary_mask[state_i], overwrite)
         
-        # --- NO fixed tiles =
+        # --- NO fixed tiles and Bin mask=
         # ---- One hot encode the channels
         # ---- Convert the numpy array to PyTorch's tensor
         else:
             in_tensor = _preprocess_input(init_states[state_i], n_tile_types)
 
-        for step in range(n_steps):
+        for _ in range(n_steps):
 
             # --- Run the single forward pass
             action = model(in_tensor)
@@ -67,8 +73,10 @@ def _simulate(
             level = th.argmax(action[0], dim=0).numpy()
 
             # -- Setup the input for the model again
-            if fixed_tiles is not None:
+            if fixed_tiles is not None and binary_mask is not None:
                 in_tensor = _preprocess_input(level, n_tile_types, fixed_tiles[state_i], binary_mask[state_i], overwrite)
+            elif binary_mask is not None:
+                in_tensor = _preprocess_input(init_states[state_i], n_tile_types, None, binary_mask[state_i], overwrite)
             else:
                 in_tensor = _preprocess_input(level, n_tile_types)
     

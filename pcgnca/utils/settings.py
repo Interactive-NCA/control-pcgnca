@@ -27,7 +27,13 @@ def _load_settings(path):
         game_settings = json.load(f)
         settings.update(game_settings)
 
-    return settings, game_settings
+    # Load slurm settings
+    slurm_set_path = os.path.join(path, "slurm", "settings.json")
+    with open(slurm_set_path, 'r') as f:
+        slurm_set = json.load(f)
+        settings.update(slurm_set)
+
+    return settings, game_settings, slurm_set
 
 def _log_settings(settings, path, exp_name):
 
@@ -64,17 +70,20 @@ def _get_experiment_name(settings, avoid):
 
     return name
 
-# --------------------- Public functions
-def from_experimentid_to_evolver(experiments_path, expid, cli_args):
-
-    # - Find the path to the experiment
+def _find_path_to_experiment(experiments_path, expid):
     path = None
     all_experiments = os.listdir(experiments_path)
     for exp_filename in all_experiments:
         if f"ExperimentId-{expid}" in exp_filename:
             path = os.path.join(experiments_path, exp_filename)
             break
-    
+    return path
+
+# --------------------- Public functions
+def from_experimentid_to_settings(experiments_path, expid, cli_args):
+    # - Find the path to the experiment
+    path = _find_path_to_experiment(experiments_path, expid)
+ 
     # - Assertion
     assert path is not None, f"Experiment with {expid} does not exist!"
 
@@ -87,13 +96,18 @@ def from_experimentid_to_evolver(experiments_path, expid, cli_args):
     settings.update(cli_args)
 
     # -- Finally, add logger and save path
-
-    # -- Add save and settings path to settings dict
     settings["save_path"] = path
     settings["logger"] = ScriptInformation()
+    
+    return settings
+
+def from_experimentid_to_evolver(experiments_path, expid, cli_args):
+
+    # - Get settings
+    settings = from_experimentid_to_settings(experiments_path, expid, cli_args)
 
     # - Get evolver
-    evolver_path = os.path.join(path, "evolver.pkl")
+    evolver_path = os.path.join(settings.save_path, "evolver.pkl")
     evolver = get_evolver(settings, evolver_path)
 
     return evolver
@@ -106,10 +120,10 @@ def get_settings(load_path, save_path):
     """
 
     # Load the json file into dict
-    settings, game_settings = _load_settings(load_path)
+    settings, game_settings, slurm_settings = _load_settings(load_path)
 
     # Get experiment name based on the settings
-    avoid = list(game_settings.keys()) # avoid adding these to the name
+    avoid = list(game_settings.keys()) + list(slurm_settings.keys()) # avoid adding these to the name
     exp_name = _get_experiment_name(settings, avoid=avoid)
 
     # Save the settings dict to an experiment folder
@@ -121,8 +135,6 @@ def get_settings(load_path, save_path):
 
     # Initialise logging
     settings["logger"] = ScriptInformation()
-    settings["logger"].script_time()
-    settings["logger"].section_start(":construction: Experiment Setup")
 
     return settings
 
@@ -131,6 +143,10 @@ def get_evolver(settings, evolver_path=None):
     - path exists including the evolver.pkl -> continue in evolution
     - does not exist, the evolver needs -> start from scratch
     """
+
+    # - Show the setup
+    settings["logger"].script_time()
+    settings["logger"].section_start(":construction: Experiment Setup")
 
     # - Continue
     try:

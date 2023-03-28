@@ -61,8 +61,20 @@ class Evolver:
             # -- Get latent seeds
             init_states, fixed_states, binary_mask = self._get_latent_seeds()
 
-            # -- Get stats about each solutions' performance
-            objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, extended_stats=False)
+            # -- Compute the objective values and BCs of the proposed solutions
+            # --- NO fixed seeds (baseline) = normal approach
+            if fixed_states is None:
+                objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, extended_stats=False)
+            # --- Fixed seeds:
+            # ---- Compute BCs based on seeds WITHOUT fixed tiles
+            # ---- Compute objs based on seeds WITH  fixed tiles
+            else:
+                # ----- Generate bin mask full of zeroes since this model expexts bin channel
+                bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
+
+                # ----- Retrive the stats as desribed above
+                _, bcs = self._get_gen_sols_stats(gen_sols, init_states, None, bin_mask_zeros, extended_stats=False)
+                objs, _ = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, extended_stats=False)
 
             # -- Send the stats back to the optimiser
             self.scheduler.tell(objs, bcs)

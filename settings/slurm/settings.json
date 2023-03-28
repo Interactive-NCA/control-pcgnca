@@ -1,0 +1,7 @@
+{
+    "partition": "brown",
+    "emails": "luci@itu.dk,lukr@itu.dk",
+    "bashrc_path": "/home/luci/.bashrc",
+    "envname": "pcgnca",
+    "install_req": true
+}
