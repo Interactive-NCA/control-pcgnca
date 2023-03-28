@@ -35,7 +35,7 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
     final_result += (heading + _get_experiment_results_summary(data, experiment_ids))
 
     # -------- TRAINING RESULTS SUMMARY
-    # - Get experiment settings summary
+    # - Define proper heading
     heading = "### 🔖 Training Process Summary\n\n---\n\n"
     # - Collect the data about settings first
     data = _load_experiment_results(paths, os.path.join("training_summary", "objective_stats.json"))
@@ -43,6 +43,30 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
     figures = _add_figures(paths, [os.path.join("training_summary", "objective.png")], experiment_ids)
     # - Get the markdown summary 
     final_result += (heading + _get_experiment_results_summary(data, experiment_ids) + figures)
+
+    # -------- EVALUATION RESULTS
+    # - Define the section's structure
+    subsections = [("fixed_tiles_evaluation_summary", "WITH"), ("evaluation_summary", "WITHOUT")]
+    subsubsections = ["objective", "playability", "reliability"]
+
+    # - Create the section 
+    for subsec_folder, subsec_title in subsections:
+        # -- Define heading
+        final_result += f"### 🎯 Evaluation on seeds {subsec_title} Fixed tiles\n\n---\n\n"
+
+        for subsec_file in subsubsections:
+
+            # --- Add subheading
+            final_result += f"👉 **{subsec_file.upper()}**\n\n"
+
+            # --- Collect the data
+            data = _load_experiment_results(paths, os.path.join(subsec_folder, f"{subsec_file}_stats.json"))
+            
+            # --- Also the figures
+            figures = _add_figures(paths, [os.path.join(subsec_folder, f"{subsec_file}.png")], experiment_ids)
+
+            # --- Get the markdown summary 
+            final_result += (_get_experiment_results_summary(data, experiment_ids) + figures)
 
     # -------- SAVE THE RESULTING MD DOC
     # - Save the markdown file
@@ -72,7 +96,7 @@ def _add_figures(exp_paths, figure_paths, expids):
     columns = [f"Experiment {i}" for i in expids]  
     result = pd.DataFrame.from_dict(data, orient='index', columns=columns).to_markdown()
 
-    return result + "\n\n"
+    return result + "\n\n<br/>\n\n"
 
 def _load_experiment_results(experiment_paths, result_path):
 
