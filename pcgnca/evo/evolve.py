@@ -212,7 +212,7 @@ class Evolver:
             "Number of generations": self.completed_generations
         }
 
-        # - Save the summary
+        # - Save the summary along with the csv version of the archive
         # -- Make directory
         dir_path = os.path.join(self.save_path, dirname)
         os.makedirs(dir_path, exist_ok=True)
@@ -222,6 +222,10 @@ class Evolver:
             json.dump(
                 stats, f
             )
+        
+        # -- Save the archive as csv
+        csv_path = os.path.join(dir_path, f"{filename}_eval_archive.csv")
+        df.to_csv(csv_path)
         
         # - Create a visualisation of the archive
         title = f"{filename} function value across archive"

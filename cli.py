@@ -103,7 +103,7 @@ def load_evolver(expid=None):
 
     # - Load the evolver based on the expids
     else:  
-        evolver = from_experimentid_to_evolver(EXPERIMENT_SAVE_PATH, expid, vars(args))
+        evolver = from_experimentid_to_evolver(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH, expid, vars(args))
     
         return evolver
 
@@ -117,7 +117,7 @@ def main():
 
         # - Starting from EXISTING experiment
         if args.expid:
-            settings = from_experimentid_to_settings(EXPERIMENT_SAVE_PATH, args.expid, vars(args))
+            settings = from_experimentid_to_settings(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH, args.expid, vars(args))
             get_slurm_file(settings, vars(args))
 
         # - Starting from SCRATCH 

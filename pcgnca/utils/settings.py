@@ -80,7 +80,7 @@ def _find_path_to_experiment(experiments_path, expid):
     return path
 
 # --------------------- Public functions
-def from_experimentid_to_settings(experiments_path, expid, cli_args):
+def from_experimentid_to_settings(load_path, experiments_path, expid, cli_args):
     # - Find the path to the experiment
     path = _find_path_to_experiment(experiments_path, expid)
  
@@ -97,17 +97,18 @@ def from_experimentid_to_settings(experiments_path, expid, cli_args):
 
     # -- Finally, add logger and save path
     settings["save_path"] = path
+    settings["settings_path"] = load_path
     settings["logger"] = ScriptInformation()
     
     return settings
 
-def from_experimentid_to_evolver(experiments_path, expid, cli_args):
+def from_experimentid_to_evolver(load_path, experiments_path, expid, cli_args):
 
     # - Get settings
-    settings = from_experimentid_to_settings(experiments_path, expid, cli_args)
+    settings = from_experimentid_to_settings(load_path, experiments_path, expid, cli_args)
 
     # - Get evolver
-    evolver_path = os.path.join(settings.save_path, "evolver.pkl")
+    evolver_path = os.path.join(settings["save_path"], "evolver.pkl")
     evolver = get_evolver(settings, evolver_path)
 
     return evolver
@@ -156,7 +157,7 @@ def get_evolver(settings, evolver_path=None):
         evolver.logger.working_on("Will start evolution using EXISTING archive with this experiment setup ...")
     
     # - Start from scratch
-    except Exception as E:
+    except Exception as e:
         evolver = Evolver(**settings)
         evolver.logger.working_on("Will start evolution from SCRATCH with this experiment setup ...")
 
