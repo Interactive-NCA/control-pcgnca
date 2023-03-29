@@ -77,7 +77,7 @@ def run_gen_slurm_file_assertions():
     if args.evaluate:
         run_evaluation_assertions()
 
-def load_evolver(expid=None):
+def load_evolver():
 
     # - Assertions
     # -- Assertions for train
@@ -89,7 +89,7 @@ def load_evolver(expid=None):
         run_evaluation_assertions()
 
     # -- Load the evolver based on settings.json file
-    if not expid:
+    if not args.expid:
         # -- Load settings and path to save the experiment related files
         settings = get_settings(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH)
         
@@ -99,13 +99,13 @@ def load_evolver(expid=None):
         # -- Get evolver
         evolver = get_evolver(settings)
 
-        return evolver
+        return evolver, settings
 
     # - Load the evolver based on the expids
     else:  
-        evolver = from_experimentid_to_evolver(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH, expid, vars(args))
+        evolver, settings = from_experimentid_to_evolver(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH, args.expid, vars(args))
     
-        return evolver
+        return evolver, settings
 
 # ------- Execution based on flags
 def main():
@@ -130,23 +130,25 @@ def main():
         # - The file should be generated at this point
         return
 
-    # TRAINING
-    if args.train:
-        # -- Load evolver
-        evolver = load_evolver(args.expid)
+    # TRAINING and EVALUATION
+    # - Common
+    if args.train or args.evaluate:
+        # -- Load evolver and settings
+        evolver, settings = load_evolver()
 
-        # -- Finally, let the evolver do the training
+        # -- Show user the loaded settings
+        evolver.logger.section_start(":crystal_ball: Experiment and Game settings")
+        evolver._show_exp_settings()
+
+    # - Train
+    if args.train:
         evolver.evolve()
 
-    # EVALUATION
+    # - Eval
     if args.evaluate:
-        # - Load evolver
-        evolver = load_evolver(args.expid)
-
-        # -- Finally, evaluate the evolver's archive
         evolver.evaluate_archive()
     
-    # MARKDOWN summary and comparison of diffrent experiments
+    # MARKDOWN summary and comparison of different experiments
     if args.summarise:
         ids = [int(expid) for expid in args.summarise.split(",")]
         get_experiments_summary(ids, EXPERIMENT_SAVE_PATH, SUMMARIES_PATH)

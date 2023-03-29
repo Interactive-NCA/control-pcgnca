@@ -88,6 +88,9 @@ class Evolver:
 
     def evaluate_archive(self):
         
+        # - Section intro
+        self.logger.section_start(":mage: Evaluation of the trained archive")
+        
         # - Summarise the statistics about the trained archive
         # -- Remove the older folder if it exists indeed
         try:
@@ -96,6 +99,7 @@ class Evolver:
             pass
 
         # -- Create the new folder with the fresh content
+        self.logger.working_on("Summarising trained archive ...")
         self._compute_archive_stats(self.gen_archive, "training_summary", "objective")
 
         # - Summarise results for seeds with and without fixed tiles
@@ -118,6 +122,7 @@ class Evolver:
 
         # FIXED tiles eval
         # --------------------
+        self.logger.working_on("Summarising performance of trained archive on NEW seeds with FIXED TILES ...")
         # - Assertions of assumptions
         # -- Make sure that fixed tiles archive is loaded
         if self.fixed_tiles_arch is None:
@@ -142,6 +147,7 @@ class Evolver:
 
         # NO FIXED tiles eval
         # -------------------- 
+        self.logger.working_on("Summarising performance of trained archive on NEW seeds WITHOUT FIXED TILES ...")
         # - Assertions
         # -- Set the fixed tiles archive to none --> no fixed seeds
         self.fixed_tiles_arch = None
@@ -416,8 +422,7 @@ class Evolver:
         assert c1 or c2, "You can either have both fixed inputs and binary enabled completely disabled. (nothing in between)"
         
     def _show_exp_settings(self):
-        exclude = ["logger", "save_path"]
-        members = [[k, str(v)] for k, v in self.settings.items() if k not in exclude]
+        members = [[k, str(v)] for k, v in self.settings["settings_to_log"].items()]
         self.logger.show_table("", ["Parameter", "Value"], members)
 
     def _save(self):

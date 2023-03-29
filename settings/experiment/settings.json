@@ -1,5 +1,5 @@
 {
-    "experiment_id": 4,
+    "experiment_id": 1,
     "game": "zelda",
     "model_name": "NCA",
     "step_size": 0.05,

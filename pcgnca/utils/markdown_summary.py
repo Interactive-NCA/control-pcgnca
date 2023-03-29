@@ -34,6 +34,8 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
     heading = "### 🔮 About experiment(s)\n\n---\n\n"
     # - Collect the data about settings first
     data = _load_experiment_results(paths, "settings.json")
+    # - Include only the settings to log
+    data = {k : d["settings_to_log"] for k, d in data.items()}
     # - Get the markdown summary 
     final_result += (heading + _get_experiment_results_summary(data, experiment_ids))
 

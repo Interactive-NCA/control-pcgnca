@@ -16,16 +16,22 @@ from .logging import ScriptInformation
 # --------------------- Private functions
 def _load_settings(path):
 
+    # Save the settings to dict
+    settings = dict()
+
     # Load the experiment settings
     full_path = os.path.join(path, "experiment", "settings.json")
     with open(full_path, 'r') as f:
-        settings = json.load(f) 
+        exp_settings = json.load(f) 
+        settings.update(exp_settings)
+        settings["settings_to_log"] = exp_settings
 
     # Load the given game's settings
     game_settings_path = os.path.join(path, "games", f"{settings['game']}.json")
     with open(game_settings_path, 'r') as f:
         game_settings = json.load(f)
         settings.update(game_settings)
+        settings["settings_to_log"].update(game_settings)
 
     # Load slurm settings
     slurm_set_path = os.path.join(path, "slurm", "settings.json")
@@ -111,7 +117,7 @@ def from_experimentid_to_evolver(load_path, experiments_path, expid, cli_args):
     evolver_path = os.path.join(settings["save_path"], "evolver.pkl")
     evolver = get_evolver(settings, evolver_path)
 
-    return evolver
+    return evolver, settings
  
 def get_settings(load_path, save_path):
     """Loads experiments settings,
@@ -124,7 +130,7 @@ def get_settings(load_path, save_path):
     settings, game_settings, slurm_settings = _load_settings(load_path)
 
     # Get experiment name based on the settings
-    avoid = list(game_settings.keys()) + list(slurm_settings.keys()) # avoid adding these to the name
+    avoid = list(game_settings.keys()) + list(slurm_settings.keys()) + ["settings_to_log"] # avoid adding these to the name
     exp_name = _get_experiment_name(settings, avoid=avoid)
 
     # Save the settings dict to an experiment folder
@@ -146,22 +152,18 @@ def get_evolver(settings, evolver_path=None):
     """
 
     # - Show the setup
-    settings["logger"].script_time()
-    settings["logger"].section_start(":construction: Experiment Setup")
+    settings["logger"].section_start(":construction: Load evolver")
 
     # - Continue
     try:
         path = evolver_path if evolver_path else os.path.join(settings["save_path"], "evolver.pkl")
         evolver = pickle.load(open(path, "rb"))
         evolver._init(**settings)
-        evolver.logger.working_on("Will start evolution using EXISTING archive with this experiment setup ...")
+        evolver.logger.working_on("Will start evolution using EXISTING archive")
     
     # - Start from scratch
     except Exception as e:
         evolver = Evolver(**settings)
-        evolver.logger.working_on("Will start evolution from SCRATCH with this experiment setup ...")
-
-    # - Let user know about the result
-    evolver._show_exp_settings()
+        evolver.logger.working_on("Will start evolution from SCRATCH")
 
     return evolver
