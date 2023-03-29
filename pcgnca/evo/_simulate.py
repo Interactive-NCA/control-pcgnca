@@ -64,6 +64,8 @@ def _simulate(
         else:
             in_tensor = _preprocess_input(init_states[state_i], n_tile_types)
 
+        
+        # -- Run the forward pass for n_steps
         for _ in range(n_steps):
 
             # --- Run the single forward pass
@@ -79,11 +81,13 @@ def _simulate(
                 in_tensor = _preprocess_input(init_states[state_i], n_tile_types, None, binary_mask[state_i], overwrite)
             else:
                 in_tensor = _preprocess_input(level, n_tile_types)
-    
+
+        # Reset the auxiliary channels for the next input seed to zero
+        model.reset()
+
         # -- Compute stats about the level (e.g. how many enemies, doors, keys etc.)
         level_stats = evaluator.get_zelda_level_stats(level)
         batch_stats.append(level_stats)
-
     
     # - Evaluate the batch of level stats
     return evaluator.evaluate_level_batch(batch_stats, extended_stats)
