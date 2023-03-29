@@ -20,10 +20,10 @@ def simulate(
     n_steps,
     overwrite,
     obj_weights,
-    extended_stats
+    to_return
 ):
     states_copy = np.copy(init_states)
-    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite, obj_weights, extended_stats)
+    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite, obj_weights, to_return)
 
 def _simulate(
     model,
@@ -34,7 +34,7 @@ def _simulate(
     n_steps,
     overwrite,
     obj_weights,
-    extended_stats
+    to_return
 ):
 
     # - Initialise the evaluator
@@ -43,6 +43,7 @@ def _simulate(
     # - Let the model go over each init state for N steps
     # and collect the stats for each level generation
     batch_stats = []
+    batch_steps_levels = []
     for state_i in range(len(init_states)):
         # -- Setup input for the model
         # --- Fixed tiles with bin mask =
@@ -66,15 +67,19 @@ def _simulate(
 
         
         # -- Run the forward pass for n_steps
+        levels = [] # keeps track of generated levels after each step
         for _ in range(n_steps):
 
             # --- Run the single forward pass
             action = model(in_tensor)
 
-            # -- Extract the level (now 2d int array)
+            # --- Extract the level (now 2d int array)
             level = th.argmax(action[0], dim=0).numpy()
 
-            # -- Setup the input for the model again
+            # --- Save the levels
+            levels.append(level)
+
+            # --- Setup the input for the model again
             if fixed_tiles is not None and binary_mask is not None:
                 in_tensor = _preprocess_input(level, n_tile_types, fixed_tiles[state_i], binary_mask[state_i], overwrite)
             elif binary_mask is not None:
@@ -82,15 +87,23 @@ def _simulate(
             else:
                 in_tensor = _preprocess_input(level, n_tile_types)
 
-        # Reset the auxiliary channels for the next input seed to zero
+        # -- Reset the auxiliary channels for the next input seed to zero
         model.reset()
 
-        # -- Compute stats about the level (e.g. how many enemies, doors, keys etc.)
-        level_stats = evaluator.get_zelda_level_stats(level)
-        batch_stats.append(level_stats)
+        # -- Evaluate the episode accordingly
+        # --- Only generated levels
+        if to_return == "generated_lvls":
+            batch_steps_levels.append(levels)
+        # --- Compute stats about the level (e.g. how many enemies, doors, keys etc.)
+        else: 
+            level_stats = evaluator.get_zelda_level_stats(level)
+            batch_stats.append(level_stats)
     
-    # - Evaluate the batch of level stats
-    return evaluator.evaluate_level_batch(batch_stats, extended_stats)
+    # - Evaluate the batch accordingly
+    if to_return == "generated_lvls":
+        return np.array(batch_steps_levels) # n_sols_in_batch x n_steps x dim x dim
+    else:
+        return evaluator.evaluate_level_batch(batch_stats, to_return)
 
 def _preprocess_input(seed, n_tile_types, fixed=None, bin_mask=None, overwrite=False):
     

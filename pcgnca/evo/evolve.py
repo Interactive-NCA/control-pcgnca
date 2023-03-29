@@ -64,7 +64,7 @@ class Evolver:
             # -- Compute the objective values and BCs of the proposed solutions
             # --- NO fixed seeds (baseline) = normal approach
             if fixed_states is None:
-                objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, extended_stats=False)
+                objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
             # --- Fixed seeds:
             # ---- Compute BCs based on seeds WITHOUT fixed tiles
             # ---- Compute objs based on seeds WITH  fixed tiles
@@ -73,8 +73,8 @@ class Evolver:
                 bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
 
                 # ----- Retrive the stats as desribed above
-                _, bcs = self._get_gen_sols_stats(gen_sols, init_states, None, bin_mask_zeros, extended_stats=False)
-                objs, _ = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, extended_stats=False)
+                _, bcs = self._get_gen_sols_stats(gen_sols, init_states, None, bin_mask_zeros, "optimiser_stats")
+                objs, _ = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
 
             # -- Send the stats back to the optimiser
             self.scheduler.tell(objs, bcs)
@@ -134,7 +134,7 @@ class Evolver:
         init_states, fixed_states, binary_mask = self._get_latent_seeds()
 
         # -- Run and evaluate the models
-        df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, extended_stats=True)
+        df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
         
         # -- Evalute the df and save the results
         self._compute_eval_archive_stats(df, model_weights, fixed_seeds=True)
@@ -156,7 +156,7 @@ class Evolver:
         assert fixed_states is None and binary_mask is None, "Incorrect evaluation setup!"
 
         # -- Run and evaluate the models
-        df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, extended_stats=True)
+        df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
         
         # -- Evalute the df and save the results
         self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False)
@@ -259,7 +259,7 @@ class Evolver:
         # - Return the stats
         return summary
 
-    def _get_gen_sols_stats(self, gen_sols, init_states, fixed_tiles, binary_mask, extended_stats):
+    def _get_gen_sols_stats(self, gen_sols, init_states, fixed_tiles, binary_mask, to_return):
 
         # - Get bc weights - how important is each metric for the objective
         obj_weights = {
@@ -285,7 +285,7 @@ class Evolver:
                         self.n_steps,
                         self.overwrite,
                         obj_weights,
-                        extended_stats
+                        to_return
                 )
                 for model_w in gen_sols[n_launch * self.n_cores: (n_launch+1) * self.n_cores]
             ]
@@ -294,13 +294,15 @@ class Evolver:
             self._auto_garbage_collect(80)
         
         # - Parse the results into the expected format
-        if extended_stats:
+        if to_return == "extended_stats":
             df = pd.DataFrame.from_records(results, columns =["objective", "playability", "reliability"] + self.bcs)
             return df
-        else:
+        elif  to_return == "optimiser_stats":
             objs = [r[0] for r in results]
             bcs = [r[1:] for r in results]
             return objs, bcs
+        else:
+            raise Exception(f"Unexpected input for the parameter to_return: {to_return}")
 
     def _load_fixed_tiles_arch(self):
         """

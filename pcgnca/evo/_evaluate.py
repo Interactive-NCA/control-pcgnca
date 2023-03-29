@@ -60,7 +60,7 @@ class ZeldaEvaluation:
                 for k, v in self._reward_weights.items()
         }
     
-    def evaluate_level_batch(self, batch_stats, extended_stats=False):
+    def evaluate_level_batch(self, batch_stats, to_return="optimiser_stats"):
 
         # - Reliability
         # -- Symmetry
@@ -119,8 +119,10 @@ class ZeldaEvaluation:
         objective = final_playability_penalty + final_reliability_penalty
 
         # - Return expected output
-        if extended_stats:
+        # -- Extended stats
+        if to_return == "extended_stats":
             return [objective, final_playability_penalty, final_reliability_penalty, symmetry_mean, path_length_mean]
+        # -- Default: stats needed for the optimiser
         else:
             return [objective, symmetry_mean, path_length_mean]
 
