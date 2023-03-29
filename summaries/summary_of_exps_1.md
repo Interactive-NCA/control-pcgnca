@@ -2,26 +2,29 @@
 
 ---
 
-|                    | Experiment 1                |
-|:-------------------|:----------------------------|
-| experiment_id      | 1                           |
-| game               | zelda                       |
-| model_name         | NCA                         |
-| step_size          | 0.05                        |
-| fix_seeds          | False                       |
-| n_init_states      | 10                          |
-| n_steps            | 30                          |
-| n_aux_chans        | 8                           |
-| binary_channel     | True                        |
-| fixed_tiles        | True                        |
-| overwrite          | True                        |
-| n_models_per_dim   | 100                         |
-| playability_weight | 1                           |
-| reliability_weight | 1                           |
-| bcs                | ['symmetry', 'path-length'] |
-| bcs_bounds         | [[0, 1], [0, 271]]          |
-| n_tiles            | 5                           |
-| grid_dim           | 16                          |
+|                          | Experiment 1                                |
+|:-------------------------|:--------------------------------------------|
+| experiment_id            | 1                                           |
+| description              | This is a test experiment, nothing special. |
+| game                     | zelda                                       |
+| model_name               | NCA                                         |
+| step_size                | 0.05                                        |
+| fix_seeds                | False                                       |
+| n_init_states            | 10                                          |
+| n_steps                  | 30                                          |
+| n_aux_chans              | 8                                           |
+| binary_channel           | True                                        |
+| fixed_tiles              | True                                        |
+| fixed_tiles_difficulty   | easy                                        |
+| fixed_tiles_archive_size | 1000                                        |
+| overwrite                | True                                        |
+| n_models_per_dim         | 100                                         |
+| playability_weight       | 1                                           |
+| reliability_weight       | 1                                           |
+| bcs                      | ['symmetry', 'path-length']                 |
+| bcs_bounds               | [[0, 1], [0, 271]]                          |
+| n_tiles                  | 5                                           |
+| grid_dim                 | 16                                          |
 
 ### 🔖 Training Process Summary
 
@@ -29,25 +32,25 @@
 
 |                          |   Experiment 1 |
 |:-------------------------|---------------:|
-| N. Solutions             |     84         |
+| N. Solutions             |     79         |
 | N. Solutions Possible    |  10000         |
 | Perc. of Archive Filled  |      1         |
 | Number of generations    |     26         |
-| OBJECTIVE Sum (QD score) |     -6.3089    |
-| OBJECTIVE Mean           |     -0.0751059 |
-| OBJECTIVE Std            |      0.182278  |
-| OBJECTIVE Min            |     -1.59431   |
-| OBJECTIVE Max            |     -0.0258987 |
+| OBJECTIVE Sum (QD score) |     -5.44681   |
+| OBJECTIVE Mean           |     -0.068947  |
+| OBJECTIVE Std            |      0.223749  |
+| OBJECTIVE Min            |     -2.01949   |
+| OBJECTIVE Max            |     -0.0254606 |
 
-|           | Experiment 1                                                                                                                                                                                                                                                             |
-|:----------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| objective | ![](../experiments/ExperimentId-1_Game-zelda_ModelName-NCA_StepSize-0.05_FixSeeds-False_NInitStates-10_NSteps-30_NAuxChans-8_BinaryChannel-True_FixedTiles-True_Overwrite-True_NModelsPerDim-100_PlayabilityWeight-1_ReliabilityWeight-1/training_summary/objective.png) |
+|           | Experiment 1                                                      |
+|:----------|:------------------------------------------------------------------|
+| objective | ![](../experiments/ExperimentId-1/training_summary/objective.png) |
 
 <br/>
 
-|          | Experiment 1                                                                                                                                                                                                                                                         |
-|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| timeline | ![](../experiments/ExperimentId-1_Game-zelda_ModelName-NCA_StepSize-0.05_FixSeeds-False_NInitStates-10_NSteps-30_NAuxChans-8_BinaryChannel-True_FixedTiles-True_Overwrite-True_NModelsPerDim-100_PlayabilityWeight-1_ReliabilityWeight-1/archive_snaps/timeline.gif) |
+|          | Experiment 1                                                  |
+|:---------|:--------------------------------------------------------------|
+| timeline | ![](../experiments/ExperimentId-1/archive_snaps/timeline.gif) |
 
 <br/>
 
@@ -59,19 +62,19 @@
 
 |                          |   Experiment 1 |
 |:-------------------------|---------------:|
-| N. Solutions             |     21         |
+| N. Solutions             |     12         |
 | N. Solutions Possible    |  10000         |
 | Perc. of Archive Filled  |      0         |
 | Number of generations    |     26         |
-| OBJECTIVE Sum (QD score) |     -3.76838   |
-| OBJECTIVE Mean           |     -0.179447  |
-| OBJECTIVE Std            |      0.348166  |
-| OBJECTIVE Min            |     -1.58237   |
-| OBJECTIVE Max            |     -0.0286909 |
+| OBJECTIVE Sum (QD score) |     -2.94066   |
+| OBJECTIVE Mean           |     -0.245055  |
+| OBJECTIVE Std            |      0.568398  |
+| OBJECTIVE Min            |     -2.04084   |
+| OBJECTIVE Max            |     -0.0306722 |
 
-|           | Experiment 1                                                                                                                                                                                                                                                                           |
-|:----------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| objective | ![](../experiments/ExperimentId-1_Game-zelda_ModelName-NCA_StepSize-0.05_FixSeeds-False_NInitStates-10_NSteps-30_NAuxChans-8_BinaryChannel-True_FixedTiles-True_Overwrite-True_NModelsPerDim-100_PlayabilityWeight-1_ReliabilityWeight-1/fixed_tiles_evaluation_summary/objective.png) |
+|           | Experiment 1                                                                    |
+|:----------|:--------------------------------------------------------------------------------|
+| objective | ![](../experiments/ExperimentId-1/fixed_tiles_evaluation_summary/objective.png) |
 
 <br/>
 
@@ -79,19 +82,19 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |     21         |
+| N. Solutions               |     12         |
 | N. Solutions Possible      |  10000         |
 | Perc. of Archive Filled    |      0         |
 | Number of generations      |     26         |
-| PLAYABILITY Sum (QD score) |     -3.33511   |
-| PLAYABILITY Mean           |     -0.158815  |
-| PLAYABILITY Std            |      0.348136  |
-| PLAYABILITY Min            |     -1.57112   |
-| PLAYABILITY Max            |     -0.0165354 |
+| PLAYABILITY Sum (QD score) |     -2.72141   |
+| PLAYABILITY Mean           |     -0.226784  |
+| PLAYABILITY Std            |      0.568607  |
+| PLAYABILITY Min            |     -2.0243    |
+| PLAYABILITY Max            |     -0.0141732 |
 
-|             | Experiment 1                                                                                                                                                                                                                                                                             |
-|:------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| playability | ![](../experiments/ExperimentId-1_Game-zelda_ModelName-NCA_StepSize-0.05_FixSeeds-False_NInitStates-10_NSteps-30_NAuxChans-8_BinaryChannel-True_FixedTiles-True_Overwrite-True_NModelsPerDim-100_PlayabilityWeight-1_ReliabilityWeight-1/fixed_tiles_evaluation_summary/playability.png) |
+|             | Experiment 1                                                                      |
+|:------------|:----------------------------------------------------------------------------------|
+| playability | ![](../experiments/ExperimentId-1/fixed_tiles_evaluation_summary/playability.png) |
 
 <br/>
 
@@ -99,19 +102,19 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |    21          |
+| N. Solutions               |    12          |
 | N. Solutions Possible      | 10000          |
 | Perc. of Archive Filled    |     0          |
 | Number of generations      |    26          |
-| RELIABILITY Sum (QD score) |    -0.422238   |
-| RELIABILITY Mean           |    -0.0201066  |
-| RELIABILITY Std            |     0.00811709 |
-| RELIABILITY Min            |    -0.0330095  |
-| RELIABILITY Max            |    -0.00234375 |
+| RELIABILITY Sum (QD score) |    -0.21666    |
+| RELIABILITY Mean           |    -0.018055   |
+| RELIABILITY Std            |     0.0056342  |
+| RELIABILITY Min            |    -0.0244539  |
+| RELIABILITY Max            |    -0.00390625 |
 
-|             | Experiment 1                                                                                                                                                                                                                                                                             |
-|:------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| reliability | ![](../experiments/ExperimentId-1_Game-zelda_ModelName-NCA_StepSize-0.05_FixSeeds-False_NInitStates-10_NSteps-30_NAuxChans-8_BinaryChannel-True_FixedTiles-True_Overwrite-True_NModelsPerDim-100_PlayabilityWeight-1_ReliabilityWeight-1/fixed_tiles_evaluation_summary/reliability.png) |
+|             | Experiment 1                                                                      |
+|:------------|:----------------------------------------------------------------------------------|
+| reliability | ![](../experiments/ExperimentId-1/fixed_tiles_evaluation_summary/reliability.png) |
 
 <br/>
 
@@ -123,19 +126,19 @@
 
 |                          |   Experiment 1 |
 |:-------------------------|---------------:|
-| N. Solutions             |      40        |
+| N. Solutions             |      33        |
 | N. Solutions Possible    |   10000        |
 | Perc. of Archive Filled  |       0        |
 | Number of generations    |      26        |
-| OBJECTIVE Sum (QD score) |     -62.4839   |
-| OBJECTIVE Mean           |      -1.5621   |
-| OBJECTIVE Std            |       1.15876  |
-| OBJECTIVE Min            |      -4.23487  |
-| OBJECTIVE Max            |      -0.023622 |
+| OBJECTIVE Sum (QD score) |     -89.4145   |
+| OBJECTIVE Mean           |      -2.70953  |
+| OBJECTIVE Std            |       0.538216 |
+| OBJECTIVE Min            |      -3.18764  |
+| OBJECTIVE Max            |      -0.550844 |
 
-|           | Experiment 1                                                                                                                                                                                                                                                               |
-|:----------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| objective | ![](../experiments/ExperimentId-1_Game-zelda_ModelName-NCA_StepSize-0.05_FixSeeds-False_NInitStates-10_NSteps-30_NAuxChans-8_BinaryChannel-True_FixedTiles-True_Overwrite-True_NModelsPerDim-100_PlayabilityWeight-1_ReliabilityWeight-1/evaluation_summary/objective.png) |
+|           | Experiment 1                                                        |
+|:----------|:--------------------------------------------------------------------|
+| objective | ![](../experiments/ExperimentId-1/evaluation_summary/objective.png) |
 
 <br/>
 
@@ -143,19 +146,19 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |      40        |
+| N. Solutions               |      33        |
 | N. Solutions Possible      |   10000        |
 | Perc. of Archive Filled    |       0        |
 | Number of generations      |      26        |
-| PLAYABILITY Sum (QD score) |     -61.6209   |
-| PLAYABILITY Mean           |      -1.54052  |
-| PLAYABILITY Std            |       1.15617  |
-| PLAYABILITY Min            |      -4.22696  |
-| PLAYABILITY Max            |      -0.023622 |
+| PLAYABILITY Sum (QD score) |     -88.7062   |
+| PLAYABILITY Mean           |      -2.68807  |
+| PLAYABILITY Std            |       0.535436 |
+| PLAYABILITY Min            |      -3.16802  |
+| PLAYABILITY Max            |      -0.543307 |
 
-|             | Experiment 1                                                                                                                                                                                                                                                                 |
-|:------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| playability | ![](../experiments/ExperimentId-1_Game-zelda_ModelName-NCA_StepSize-0.05_FixSeeds-False_NInitStates-10_NSteps-30_NAuxChans-8_BinaryChannel-True_FixedTiles-True_Overwrite-True_NModelsPerDim-100_PlayabilityWeight-1_ReliabilityWeight-1/evaluation_summary/playability.png) |
+|             | Experiment 1                                                          |
+|:------------|:----------------------------------------------------------------------|
+| playability | ![](../experiments/ExperimentId-1/evaluation_summary/playability.png) |
 
 <br/>
 
@@ -163,19 +166,19 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |     40         |
+| N. Solutions               |     33         |
 | N. Solutions Possible      |  10000         |
 | Perc. of Archive Filled    |      0         |
 | Number of generations      |     26         |
-| RELIABILITY Sum (QD score) |     -0.799493  |
-| RELIABILITY Mean           |     -0.0199873 |
-| RELIABILITY Std            |      0.02248   |
-| RELIABILITY Min            |     -0.0875819 |
+| RELIABILITY Sum (QD score) |     -0.697741  |
+| RELIABILITY Mean           |     -0.0211437 |
+| RELIABILITY Std            |      0.0186271 |
+| RELIABILITY Min            |     -0.0645466 |
 | RELIABILITY Max            |     -0         |
 
-|             | Experiment 1                                                                                                                                                                                                                                                                 |
-|:------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| reliability | ![](../experiments/ExperimentId-1_Game-zelda_ModelName-NCA_StepSize-0.05_FixSeeds-False_NInitStates-10_NSteps-30_NAuxChans-8_BinaryChannel-True_FixedTiles-True_Overwrite-True_NModelsPerDim-100_PlayabilityWeight-1_ReliabilityWeight-1/evaluation_summary/reliability.png) |
+|             | Experiment 1                                                          |
+|:------------|:----------------------------------------------------------------------|
+| reliability | ![](../experiments/ExperimentId-1/evaluation_summary/reliability.png) |
 
 <br/>
 

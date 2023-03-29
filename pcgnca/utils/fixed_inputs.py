@@ -199,7 +199,7 @@ def generate_fixed_tiles(game, n_seeds, difficulty, path, graphics_path):
     seeds = generator.generate(n_seeds)
 
     # - Save these as binary in npy format
-    outfile = os.path.join(path, "fixed_tiles", f"{game}.npy")
+    outfile = os.path.join(path, "fixed_tiles", game, f"{difficulty}_{n_seeds}.npy")
     np.save(outfile, seeds)
 
     # - Visualise some of them
@@ -210,7 +210,7 @@ def generate_fixed_tiles(game, n_seeds, difficulty, path, graphics_path):
         pil_img = visualiser.render_level(seeds[randint(0, n_seeds - 1)])
         frames.append(pil_img)
         
-    outfile = os.path.join(path, "fixed_tiles", f"{game}_viz.gif")
+    outfile = os.path.join(path, "fixed_tiles", game, f"{difficulty}_{n_seeds}.gif")
     frames[0].save(outfile, format="GIF", append_images=frames, save_all=True, duration=100, loop=0)
 
 # ------------------------ Private

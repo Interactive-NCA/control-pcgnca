@@ -1,5 +1,6 @@
 {
-    "experiment_id": 1,
+    "experiment_id": 2,
+    "description" : "This is one tests whether we can load manually created fixed tiles.",
     "game": "zelda",
     "model_name": "NCA",
     "step_size": 0.05,
@@ -9,6 +10,8 @@
     "n_aux_chans": 8,
     "binary_channel": true,
     "fixed_tiles": true,
+    "fixed_tiles_difficulty": "manual",
+    "fixed_tiles_archive_size": 100,
     "overwrite": true,
     "n_models_per_dim": 100,
     "playability_weight": 1,

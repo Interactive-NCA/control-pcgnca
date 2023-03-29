@@ -1,5 +1,4 @@
-Example of generation:
+For each new game, first create folder with `README.md` describing the difficulty.
 
-```bash
-python3 cli.py --gen-fixed-seeds --fixedgen-game "zelda" --fixedgen-nseeds 10 --fixedgen-difficulty "easy"
-```
+TODO
+- [ ] Ideally, we can also visualise the manually generated levels

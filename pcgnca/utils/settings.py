@@ -53,28 +53,20 @@ def _log_settings(settings, path, exp_name):
         # Make the experiment folder
         os.makedirs(save_path)
 
+        # Drop description of the experiment which will go into separate file
+        desc = settings.pop("description", None)
+
         # Save the settings
         settings_path = os.path.join(save_path, "settings.json")
         with open(settings_path, "w") as f:
             json.dump(settings, f)
 
+        # Save the description
+        desc_path = os.path.join(save_path, "README.md")
+        with open(desc_path, "w") as f:
+            f.write(desc)
+
     return save_path
-
-def _get_experiment_name(settings, avoid):
-
-    # Create a name:
-    # use - to separate key value
-    # use _ to separate parameters
-    name = ""
-    for key, value in settings.items():
-        if key not in avoid:
-            key = "".join([k[0].upper() + k[1:] for k in key.split("_")]) # to Camel Case
-            name += f"{key}-{value}_" 
-
-    # Get rid of the last underscore
-    name = name[:-1]
-
-    return name
 
 def _find_path_to_experiment(experiments_path, expid):
     path = None
@@ -129,9 +121,8 @@ def get_settings(load_path, save_path):
     # Load the json file into dict
     settings, game_settings, slurm_settings = _load_settings(load_path)
 
-    # Get experiment name based on the settings
-    avoid = list(game_settings.keys()) + list(slurm_settings.keys()) + ["settings_to_log"] # avoid adding these to the name
-    exp_name = _get_experiment_name(settings, avoid=avoid)
+    # Get experiment name based on Id
+    exp_name = f"ExperimentId-{settings['experiment_id']}"
 
     # Save the settings dict to an experiment folder
     save_path = _log_settings(settings, save_path, exp_name)

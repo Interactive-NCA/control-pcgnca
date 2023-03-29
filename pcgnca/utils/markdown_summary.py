@@ -25,6 +25,9 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
                 path = os.path.join(experiments_path, exp_filename)
                 paths.append((expid, path,))
                 break
+    
+    # - Sort paths based on id
+    paths = sorted(paths, key=lambda x: x[0])
 
     # ------------- MAIN SECTION
     final_result = ""
@@ -48,7 +51,7 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
     figures = _add_figures(paths, [os.path.join("training_summary", "objective.png")], experiment_ids)
     # - And gifs
     # -- Generate gifs
-    timeline_fold_paths = [os.path.join(base, "archive_snaps") for _, base in paths]
+    timeline_fold_paths = sorted([os.path.join(base, "archive_snaps") for _, base in paths])
     gif_paths = [_add_archive_timeline(fold_path) for fold_path in timeline_fold_paths]
 
     # -- Only add gifs if all experiments have them

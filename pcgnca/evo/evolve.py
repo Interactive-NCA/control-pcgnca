@@ -319,9 +319,22 @@ class Evolver:
         Loads an archive (3D np array) of grid with semi-randomly generated
         levels.
         """
+        # - Load the archive with the fixed tiles
         if self.fixed_tiles:
-            fxtiles_settings_path = os.path.join(self.settings_path, "fixed_tiles", f"{self.game}.npy")
-            self.fixed_tiles_arch = np.load(fxtiles_settings_path).astype(int)
+            # -- Get path to the archive
+            filename = f"{self.fixed_tiles_difficulty}_{self.fixed_tiles_archive_size}.npy"
+            archive_path = os.path.join(self.settings_path, "fixed_tiles", self.game, filename)
+
+            # -- Try to load it into the numpy array
+            try:
+                if self.fixed_tiles_difficulty == "manual":
+                    self.fixed_tiles_arch = np.fromfile(archive_path, dtype=np.int32).reshape((-1, self.grid_dim, self.grid_dim))
+                else:
+                    self.fixed_tiles_arch = np.load(archive_path).astype(int)
+            except Exception as e:
+                raise Exception(f"Could not load the archive w/ fixed tiles! The erroe was {e}")
+ 
+        # - No need to load it
         else:
             self.fixed_tiles_arch = None
 
@@ -413,7 +426,7 @@ class Evolver:
             setattr(self, member_name, member_value)
         
         # -- Init ray for parallel processing
-        ray.init()
+        ray.init(log_to_driver=False)
 
         # -- Run some assertions
         # --- Make sure that if you have fixed tiles you also have binary channel

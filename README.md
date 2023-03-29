@@ -20,7 +20,7 @@ If there was no training ran for the given experiment, i.e., there is no folder 
 2. Start the training procedure by running in the command line:
 
 ```
-python3 cli.py --train --expid 3 --n_cores 8 --n_generations 50 --save_freq 5
+python3 cli.py --train --n_cores 8 --n_generations 50 --save_freq 5
 ```
 
 #### From EXISTING EVOLVER
