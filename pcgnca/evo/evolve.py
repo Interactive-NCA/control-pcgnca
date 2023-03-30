@@ -9,6 +9,7 @@ import json
 import shutil
 import os
 import pickle
+import logging
 
 import numpy as np
 import pandas as pd
@@ -51,6 +52,8 @@ class Evolver:
 
     # --------------------- Public functions
     def evolve(self):
+
+        self.logger.section_start(":microbe: Evolution")
 
         # - Main training loop
         for itr in tqdm(range(self.completed_generations, int(self.n_generations) + 1)):
@@ -426,7 +429,8 @@ class Evolver:
             setattr(self, member_name, member_value)
         
         # -- Init ray for parallel processing
-        ray.init(log_to_driver=False)
+        ray.init(logging_level=logging.ERROR)
+        self.logger.working_on("Successfully initialised RAY for parallel processing")
 
         # -- Run some assertions
         # --- Make sure that if you have fixed tiles you also have binary channel
