@@ -2,29 +2,29 @@
 
 ---
 
-|                          | Experiment 1                                |
-|:-------------------------|:--------------------------------------------|
-| experiment_id            | 1                                           |
-| description              | This is a test experiment, nothing special. |
-| game                     | zelda                                       |
-| model_name               | NCA                                         |
-| step_size                | 0.05                                        |
-| fix_seeds                | False                                       |
-| n_init_states            | 10                                          |
-| n_steps                  | 30                                          |
-| n_aux_chans              | 8                                           |
-| binary_channel           | True                                        |
-| fixed_tiles              | True                                        |
-| fixed_tiles_difficulty   | easy                                        |
-| fixed_tiles_archive_size | 1000                                        |
-| overwrite                | True                                        |
-| n_models_per_dim         | 100                                         |
-| playability_weight       | 1                                           |
-| reliability_weight       | 1                                           |
-| bcs                      | ['symmetry', 'path-length']                 |
-| bcs_bounds               | [[0, 1], [0, 271]]                          |
-| n_tiles                  | 5                                           |
-| grid_dim                 | 16                                          |
+|                          | Experiment 1                              |
+|:-------------------------|:------------------------------------------|
+| experiment_id            | 1                                         |
+| description              | Manual fixed tiles(100), 5000 generations |
+| game                     | zelda                                     |
+| model_name               | NCA                                       |
+| step_size                | 0.05                                      |
+| fix_seeds                | False                                     |
+| n_init_states            | 10                                        |
+| n_steps                  | 50                                        |
+| n_aux_chans              | 8                                         |
+| binary_channel           | True                                      |
+| fixed_tiles              | True                                      |
+| fixed_tiles_difficulty   | manual                                    |
+| fixed_tiles_archive_size | 100                                       |
+| overwrite                | True                                      |
+| n_models_per_dim         | 100                                       |
+| playability_weight       | 1                                         |
+| reliability_weight       | 1                                         |
+| bcs                      | ['symmetry', 'path-length']               |
+| bcs_bounds               | [[0, 1], [0, 271]]                        |
+| n_tiles                  | 5                                         |
+| grid_dim                 | 16                                        |
 
 ### 🔖 Training Process Summary
 
@@ -32,15 +32,15 @@
 
 |                          |   Experiment 1 |
 |:-------------------------|---------------:|
-| N. Solutions             |     79         |
+| N. Solutions             |   1184         |
 | N. Solutions Possible    |  10000         |
-| Perc. of Archive Filled  |      1         |
-| Number of generations    |     26         |
-| OBJECTIVE Sum (QD score) |     -5.44681   |
-| OBJECTIVE Mean           |     -0.068947  |
-| OBJECTIVE Std            |      0.223749  |
-| OBJECTIVE Min            |     -2.01949   |
-| OBJECTIVE Max            |     -0.0254606 |
+| Perc. of Archive Filled  |     12         |
+| Number of generations    |   4701         |
+| OBJECTIVE Sum (QD score) |   -202.505     |
+| OBJECTIVE Mean           |     -0.171034  |
+| OBJECTIVE Std            |      1.01443   |
+| OBJECTIVE Min            |    -11.0584    |
+| OBJECTIVE Max            |     -0.0178626 |
 
 |           | Experiment 1                                                      |
 |:----------|:------------------------------------------------------------------|
@@ -62,15 +62,15 @@
 
 |                          |   Experiment 1 |
 |:-------------------------|---------------:|
-| N. Solutions             |      12        |
-| N. Solutions Possible    |   10000        |
-| Perc. of Archive Filled  |       0        |
-| Number of generations    |      26        |
-| OBJECTIVE Sum (QD score) |      -2.84288  |
-| OBJECTIVE Mean           |      -0.236907 |
-| OBJECTIVE Std            |       0.569341 |
-| OBJECTIVE Min            |      -2.03554  |
-| OBJECTIVE Max            |      -0.023622 |
+| N. Solutions             |    102         |
+| N. Solutions Possible    |  10000         |
+| Perc. of Archive Filled  |      1         |
+| Number of generations    |   4701         |
+| OBJECTIVE Sum (QD score) |   -418.124     |
+| OBJECTIVE Mean           |     -4.09926   |
+| OBJECTIVE Std            |      3.65177   |
+| OBJECTIVE Min            |    -11.3806    |
+| OBJECTIVE Max            |     -0.0269687 |
 
 |           | Experiment 1                                                                    |
 |:----------|:--------------------------------------------------------------------------------|
@@ -82,15 +82,15 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |      12        |
-| N. Solutions Possible      |   10000        |
-| Perc. of Archive Filled    |       0        |
-| Number of generations      |      26        |
-| PLAYABILITY Sum (QD score) |      -2.68617  |
-| PLAYABILITY Mean           |      -0.223847 |
-| PLAYABILITY Std            |       0.569947 |
-| PLAYABILITY Min            |      -2.02512  |
-| PLAYABILITY Max            |      -0.011811 |
+| N. Solutions               |    102         |
+| N. Solutions Possible      |  10000         |
+| Perc. of Archive Filled    |      1         |
+| Number of generations      |   4701         |
+| PLAYABILITY Sum (QD score) |     -2.38414   |
+| PLAYABILITY Mean           |     -0.0233739 |
+| PLAYABILITY Std            |      0.0146679 |
+| PLAYABILITY Min            |     -0.110741  |
+| PLAYABILITY Max            |     -0.011811  |
 
 |             | Experiment 1                                                                      |
 |:------------|:----------------------------------------------------------------------------------|
@@ -102,15 +102,15 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |    12          |
-| N. Solutions Possible      | 10000          |
-| Perc. of Archive Filled    |     0          |
-| Number of generations      |    26          |
-| RELIABILITY Sum (QD score) |    -0.151616   |
-| RELIABILITY Mean           |    -0.0126346  |
-| RELIABILITY Std            |     0.00504229 |
-| RELIABILITY Min            |    -0.0174736  |
-| RELIABILITY Max            |    -0          |
+| N. Solutions               |    102         |
+| N. Solutions Possible      |  10000         |
+| Perc. of Archive Filled    |      1         |
+| Number of generations      |   4701         |
+| RELIABILITY Sum (QD score) |   -415.515     |
+| RELIABILITY Mean           |     -4.07368   |
+| RELIABILITY Std            |      3.65381   |
+| RELIABILITY Min            |    -11.2698    |
+| RELIABILITY Max            |     -0.0046054 |
 
 |             | Experiment 1                                                                      |
 |:------------|:----------------------------------------------------------------------------------|
@@ -126,15 +126,15 @@
 
 |                          |   Experiment 1 |
 |:-------------------------|---------------:|
-| N. Solutions             |      32        |
-| N. Solutions Possible    |   10000        |
-| Perc. of Archive Filled  |       0        |
-| Number of generations    |      26        |
-| OBJECTIVE Sum (QD score) |     -86.1493   |
-| OBJECTIVE Mean           |      -2.69217  |
-| OBJECTIVE Std            |       0.537578 |
-| OBJECTIVE Min            |      -3.03928  |
-| OBJECTIVE Max            |      -0.550604 |
+| N. Solutions             |     82         |
+| N. Solutions Possible    |  10000         |
+| Perc. of Archive Filled  |      1         |
+| Number of generations    |   4701         |
+| OBJECTIVE Sum (QD score) |    -59.099     |
+| OBJECTIVE Mean           |     -0.72072   |
+| OBJECTIVE Std            |      0.725609  |
+| OBJECTIVE Min            |     -5.57835   |
+| OBJECTIVE Max            |     -0.0198545 |
 
 |           | Experiment 1                                                        |
 |:----------|:--------------------------------------------------------------------|
@@ -146,15 +146,15 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |      32        |
-| N. Solutions Possible      |   10000        |
-| Perc. of Archive Filled    |       0        |
-| Number of generations      |      26        |
-| PLAYABILITY Sum (QD score) |     -85.5824   |
-| PLAYABILITY Mean           |      -2.67445  |
-| PLAYABILITY Std            |       0.537193 |
-| PLAYABILITY Min            |      -3.0189   |
-| PLAYABILITY Max            |      -0.542126 |
+| N. Solutions               |     82         |
+| N. Solutions Possible      |  10000         |
+| Perc. of Archive Filled    |      1         |
+| Number of generations      |   4701         |
+| PLAYABILITY Sum (QD score) |    -51.8122    |
+| PLAYABILITY Mean           |     -0.631856  |
+| PLAYABILITY Std            |      0.482669  |
+| PLAYABILITY Min            |     -1.91965   |
+| PLAYABILITY Max            |     -0.0188976 |
 
 |             | Experiment 1                                                          |
 |:------------|:----------------------------------------------------------------------|
@@ -166,14 +166,14 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |     32         |
+| N. Solutions               |     82         |
 | N. Solutions Possible      |  10000         |
-| Perc. of Archive Filled    |      0         |
-| Number of generations      |     26         |
-| RELIABILITY Sum (QD score) |     -0.557469  |
-| RELIABILITY Mean           |     -0.0174209 |
-| RELIABILITY Std            |      0.0153416 |
-| RELIABILITY Min            |     -0.0692324 |
+| Perc. of Archive Filled    |      1         |
+| Number of generations      |   4701         |
+| RELIABILITY Sum (QD score) |     -6.34957   |
+| RELIABILITY Mean           |     -0.0774338 |
+| RELIABILITY Std            |      0.6124    |
+| RELIABILITY Min            |     -5.55472   |
 | RELIABILITY Max            |     -0         |
 
 |             | Experiment 1                                                          |
