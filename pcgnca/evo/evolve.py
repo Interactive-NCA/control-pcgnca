@@ -238,12 +238,12 @@ class Evolver:
         
         # - Create a visualisation of the archive
         title = f"{filename} function value across archive"
-        fig = self._get_archive_heatmap(title)
+        fig = self._get_archive_heatmap(title, archive)
         fig.savefig(os.path.join(dir_path, f"{filename}.png"))
     
-    def _get_archive_heatmap(self, title):
+    def _get_archive_heatmap(self, title, archive):
         fig, ax = plt.subplots(figsize=(8, 6))
-        grid_archive_heatmap(self.gen_archive, ax=ax, vmin=0, vmax=-25)
+        grid_archive_heatmap(archive, ax=ax, vmin=0, vmax=-25)
         ax.set_title(title)
         ax.set_xlabel(self.bcs[0])
         ax.set_ylabel(self.bcs[1])
@@ -457,7 +457,7 @@ class Evolver:
         # -- Get the figure and save it
         n_gens = self.completed_generations if self.completed_generations else 0 
         title = f"After {n_gens} generations"
-        fig = self._get_archive_heatmap(title)
+        fig = self._get_archive_heatmap(title, self.gen_archive)
         fig.savefig(os.path.join(archive_snaps_path, f"ngens_{n_gens}.png")) 
 
         # - Save the evolver 

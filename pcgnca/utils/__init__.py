@@ -4,6 +4,7 @@ from .visualise import ZeldaLevelViz
 from .fixed_inputs import generate_fixed_tiles
 from .markdown_summary import get_experiments_summary
 from .slurm import get_slurm_file
+from .exp_folder_transfer import transfer_exp_folder
 
 __all__ = [
     "get_settings",
@@ -13,5 +14,7 @@ __all__ = [
     "generate_fixed_tiles",
     "get_experiments_summary",
     "from_experimentid_to_evolver",
-    "get_slurm_file"
+    "get_slurm_file",
+    "transfer_exp_folder",
+    "from_experimentid_to_settings"
 ]

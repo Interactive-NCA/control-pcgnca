@@ -1,7 +1,10 @@
 {
     "partition": "brown",
     "emails": "luci@itu.dk,lukr@itu.dk",
+    "username": "luci",
+    "domain": "hpc.itu.dk",
     "bashrc_path": "/home/luci/.bashrc",
+    "repo_path": "/home/data_shares/interactive_nca/control-pcgnca",
     "envname": "pcgnca",
     "install_req": true
 }
