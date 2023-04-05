@@ -7,6 +7,7 @@ one or more experiments at once.
 # --------------------- External libraries import
 import json
 import os
+import re
 import glob
 import pandas as pd
 
@@ -200,8 +201,18 @@ def _get_experiment_results_summary(stats, expids):
 
     return final_result + "\n\n"
 
+def _get_ngens_num(path):
+    match = re.search(r'ngens_(\d+)\.png', path)
+    if match:
+        return int(match.group(1))
+    else:
+        raise Exception("Incorrect format of snapshot of the archive!")
+
 def _add_archive_timeline(frame_folder):
-    paths = sorted(glob.glob(f"{frame_folder}/*.png"))
+
+    # Get pngs paths and 
+    paths = sorted(glob.glob(f"{frame_folder}/*.png"), key=_get_ngens_num)
+
     frames = [Image.open(image) for image in paths]
     duration = 20*int(len(frames)/1)
     if len(frames) > 0:
