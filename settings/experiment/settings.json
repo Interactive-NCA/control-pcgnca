@@ -1,6 +1,6 @@
 {
     "experiment_id": 2,
-    "description" : "This is one tests whether we can load manually created fixed tiles.",
+    "description" : "Test test to debug what is the problem when evaluating experiment trained on no fixed tiles.",
     "game": "zelda",
     "model_name": "NCA",
     "step_size": 0.05,
@@ -8,8 +8,8 @@
     "n_init_states": 10,
     "n_steps": 30,
     "n_aux_chans": 8,
-    "binary_channel": true,
-    "fixed_tiles": true,
+    "binary_channel": false,
+    "fixed_tiles": false,
     "fixed_tiles_difficulty": "manual",
     "fixed_tiles_archive_size": 100,
     "overwrite": true,

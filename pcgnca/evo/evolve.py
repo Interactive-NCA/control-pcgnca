@@ -120,22 +120,20 @@ class Evolver:
         # - Get setup of the evolver before going through evaluation
         # This to ensure that the state of evolve before and after evalution is the same
         fixed_tiles_archive = self.fixed_tiles_arch
-        bin_channel = self.binary_channel
-        model = self.gen_model
+        overwrite = self.overwrite
 
         # FIXED tiles eval
         # --------------------
         self.logger.working_on("Summarising performance of trained archive on NEW seeds with FIXED TILES ...")
         # - Assertions of assumptions
-        # -- Make sure that fixed tiles archive is loaded
+        # -- Make sure that fixed tiles archive is loaded --> this is to ensure that _get_latent_seeds generates also fixed states (tiles)
         if self.fixed_tiles_arch is None:
             self._load_fixed_tiles_arch() # it is now available under self.fixed_tiles_arch
         
-        # -- Make sure the model can take into account bin channel
-        if not self.binary_channel:
-            self.binary_channel = True
-            self._init_model() # now the model with bin channle available under self.gen_model
-
+        # -- Make sure overwriting is enabled
+        # (this means that after each step, we make sure that fix tiles do not get changed)
+        self.overwrite = True
+        
         # - Evaluate the archive on seeds with fixed tiles --> since the fixed
         #   tiles archive is loaded, _get_latent_seeds knows to generate seeds with fixed tiles
         # -- Generate the seeds
@@ -155,9 +153,8 @@ class Evolver:
         # -- Set the fixed tiles archive to none --> no fixed seeds
         self.fixed_tiles_arch = None
 
-        # -- the model has no binary channel
-        self.binary_channel = False
-        self._init_model()
+        # -- No fixed seeds no need for overwrite
+        self.overwrite = False
 
         # - Evaluate the archive on seeds with NO fixed tiles
         # -- Generate the seeds
@@ -173,8 +170,7 @@ class Evolver:
         # CLEANUP
         # --------------------
         self.fixed_tiles_arch = fixed_tiles_archive 
-        self.binary_channel = bin_channel
-        self.gen_model = model
+        self.overwrite = overwrite
 
     def _compute_eval_archive_stats(self, df, weights, fixed_seeds):
 
