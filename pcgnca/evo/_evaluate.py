@@ -223,6 +223,15 @@ def get_sym(int_map, dim):
     Function to get the vertical symmetry of a level
     int_map (numpy array of ints): representation of level
     returns a symmetry float value normalized to a range of 0.0 to 1.0
+
+    Algorithm:
+    1. Compute vertical symmetry:
+    - Compute total number of tiles and divide by 2 (max_possible_matches)
+    - Split the grid in half vertically and then compare if corresponding tiles are matching
+    - Count the matches
+    - Return n_matces/max_possible_matches
+    2. Same for horizontal symmetry computation
+    3. Take the average of the two
     """
     result = (_get_ver_sym(int_map, dim) + _get_hor_sym(int_map, dim)) / 2.0
 
