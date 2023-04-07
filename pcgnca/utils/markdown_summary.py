@@ -61,10 +61,13 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
     else:
         gifs = ""
 
-    # - Get the markdown summary 
+    # - Get the markdown summary
     final_result += (heading + _get_experiment_results_summary(data, experiment_ids) + figures + gifs)
 
-    # -------- EVALUATION RESULTS
+    # -------- HISTORY OF OBJs and BCs
+    final_result += f"### 👀 Training differences in Objs and BCs trained and evaluated on seeds with and without fixed seeds\n\n---\n\n"
+    final_result += _summarise_obj_bcs_history(paths)
+
     # - Define the section's structure
     subsections = [("fixed_tiles_evaluation_summary", "WITH"), ("evaluation_summary", "WITHOUT")]
     subsubsections = ["objective", "playability", "reliability"]
@@ -95,6 +98,49 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
         f.write(final_result)
 
 # --------------------- Private functions
+def _summarise_obj_bcs_history(paths):
+
+    # - Collect the stats
+    raw = dict()
+    row_names = ["bc0_diff", "bc1_diff", "obj_diff"]
+    for i, path in paths:
+
+        # -- Compute the differences
+        filepath = os.path.join(path, "objs_bcs_history.csv")
+        df = pd.read_csv(filepath)
+        df[row_names[0]] = abs(df.iloc[:, 0] - df.iloc[:, 3])
+        df[row_names[1]] = abs(df.iloc[:, 1] - df.iloc[:, 4])
+        df[row_names[2]] = abs(df.iloc[:, 2] - df.iloc[:, 5])
+        
+        # -- Compute summary statistics of the resulting three columns
+        stats = df.iloc[:, -3 : ].describe()
+
+        # -- Save the selected summary stats
+        selected = ["mean", "min", "25%", "50%", "75%", "max"] 
+        for sel in selected:
+            if raw.get(sel):
+                raw[sel].append([list(stats.loc[sel])])
+            else:
+                raw[sel] = [list(stats.loc[sel])]
+
+    # - Turn the raw collected data into pd df that can be turn into markdown
+    n = len(paths)
+    final_data = []
+    for i, row_name in enumerate(row_names):
+        data = dict()
+        for row_stat, values in raw.items():
+            data[f"{row_name} {row_stat}"] = [values[j][i] for j in range(n)]
+        final_data.append((row_name, data,))
+
+    # - Create the markdowns and return them
+    result = ""
+    columns = [f"Experiment {i}" for i,_ in paths]
+    for name, data in final_data:
+        final_result = pd.DataFrame.from_dict(data, orient='index', columns=columns)
+        result += (f"👉 **{name}**\n\n" + final_result.to_markdown() + "\n\n\n")
+    
+    return result
+
 def _add_figures(exp_paths, figure_paths, expids):
     # - Save the paths of figures to data dict
     data = dict()

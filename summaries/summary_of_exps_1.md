@@ -2,29 +2,29 @@
 
 ---
 
-|                          | Experiment 1                              |
-|:-------------------------|:------------------------------------------|
-| experiment_id            | 1                                         |
-| description              | Manual fixed tiles(100), 5000 generations |
-| game                     | zelda                                     |
-| model_name               | NCA                                       |
-| step_size                | 0.05                                      |
-| fix_seeds                | False                                     |
-| n_init_states            | 10                                        |
-| n_steps                  | 50                                        |
-| n_aux_chans              | 8                                         |
-| binary_channel           | True                                      |
-| fixed_tiles              | True                                      |
-| fixed_tiles_difficulty   | manual                                    |
-| fixed_tiles_archive_size | 100                                       |
-| overwrite                | True                                      |
-| n_models_per_dim         | 100                                       |
-| playability_weight       | 1                                         |
-| reliability_weight       | 1                                         |
-| bcs                      | ['symmetry', 'path-length']               |
-| bcs_bounds               | [[0, 1], [0, 271]]                        |
-| n_tiles                  | 5                                         |
-| grid_dim                 | 16                                        |
+|                          | Experiment 1                    |
+|:-------------------------|:--------------------------------|
+| experiment_id            | 1                               |
+| description              | Test for shape of in and output |
+| game                     | zelda                           |
+| model_name               | NCA                             |
+| step_size                | 0.05                            |
+| fix_seeds                | False                           |
+| n_init_states            | 10                              |
+| n_steps                  | 30                              |
+| n_aux_chans              | 8                               |
+| binary_channel           | True                            |
+| fixed_tiles              | True                            |
+| fixed_tiles_difficulty   | manual                          |
+| fixed_tiles_archive_size | 100                             |
+| overwrite                | True                            |
+| n_models_per_dim         | 100                             |
+| playability_weight       | 1                               |
+| reliability_weight       | 1                               |
+| bcs                      | ['symmetry', 'path-length']     |
+| bcs_bounds               | [[0, 1], [0, 271]]              |
+| n_tiles                  | 5                               |
+| grid_dim                 | 16                              |
 
 ### 🔖 Training Process Summary
 
@@ -32,15 +32,15 @@
 
 |                          |   Experiment 1 |
 |:-------------------------|---------------:|
-| N. Solutions             |   1184         |
+| N. Solutions             |     80         |
 | N. Solutions Possible    |  10000         |
-| Perc. of Archive Filled  |     12         |
-| Number of generations    |   4701         |
-| OBJECTIVE Sum (QD score) |   -202.505     |
-| OBJECTIVE Mean           |     -0.171034  |
-| OBJECTIVE Std            |      1.01443   |
-| OBJECTIVE Min            |    -11.0584    |
-| OBJECTIVE Max            |     -0.0178626 |
+| Perc. of Archive Filled  |      1         |
+| Number of generations    |     12         |
+| OBJECTIVE Sum (QD score) |    -24.174     |
+| OBJECTIVE Mean           |     -0.302175  |
+| OBJECTIVE Std            |      1.10696   |
+| OBJECTIVE Min            |     -7.50384   |
+| OBJECTIVE Max            |     -0.0274528 |
 
 |           | Experiment 1                                                      |
 |:----------|:------------------------------------------------------------------|
@@ -54,6 +54,46 @@
 
 <br/>
 
+### 👀 Training differences in Objs and BCs trained and evaluated on seeds with and without fixed seeds
+
+---
+
+👉 **bc0_diff**
+
+|               |   Experiment 1 |
+|:--------------|---------------:|
+| bc0_diff mean |    0.144125    |
+| bc0_diff min  |    0.000390625 |
+| bc0_diff 25%  |    0.0459961   |
+| bc0_diff 50%  |    0.096875    |
+| bc0_diff 75%  |    0.220605    |
+| bc0_diff max  |    0.551172    |
+
+
+👉 **bc1_diff**
+
+|               |   Experiment 1 |
+|:--------------|---------------:|
+| bc1_diff mean |          2.116 |
+| bc1_diff min  |          0     |
+| bc1_diff 25%  |          0     |
+| bc1_diff 50%  |          0     |
+| bc1_diff 75%  |          2.9   |
+| bc1_diff max  |         11.4   |
+
+
+👉 **obj_diff**
+
+|               |   Experiment 1 |
+|:--------------|---------------:|
+| obj_diff mean |     2.21322    |
+| obj_diff min  |     0.00367848 |
+| obj_diff 25%  |     0.207606   |
+| obj_diff 50%  |     0.728594   |
+| obj_diff 75%  |     4.22552    |
+| obj_diff max  |     8.15476    |
+
+
 ### 🎯 Evaluation on seeds WITH Fixed tiles
 
 ---
@@ -62,15 +102,15 @@
 
 |                          |   Experiment 1 |
 |:-------------------------|---------------:|
-| N. Solutions             |    102         |
+| N. Solutions             |     35         |
 | N. Solutions Possible    |  10000         |
-| Perc. of Archive Filled  |      1         |
-| Number of generations    |   4701         |
-| OBJECTIVE Sum (QD score) |   -418.124     |
-| OBJECTIVE Mean           |     -4.09926   |
-| OBJECTIVE Std            |      3.65177   |
-| OBJECTIVE Min            |    -11.3806    |
-| OBJECTIVE Max            |     -0.0269687 |
+| Perc. of Archive Filled  |      0         |
+| Number of generations    |     12         |
+| OBJECTIVE Sum (QD score) |    -69.2232    |
+| OBJECTIVE Mean           |     -1.97781   |
+| OBJECTIVE Std            |      3.2332    |
+| OBJECTIVE Min            |    -10.4632    |
+| OBJECTIVE Max            |     -0.0273854 |
 
 |           | Experiment 1                                                                    |
 |:----------|:--------------------------------------------------------------------------------|
@@ -82,15 +122,15 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |    102         |
-| N. Solutions Possible      |  10000         |
-| Perc. of Archive Filled    |      1         |
-| Number of generations      |   4701         |
-| PLAYABILITY Sum (QD score) |     -2.38414   |
-| PLAYABILITY Mean           |     -0.0233739 |
-| PLAYABILITY Std            |      0.0146679 |
-| PLAYABILITY Min            |     -0.110741  |
-| PLAYABILITY Max            |     -0.011811  |
+| N. Solutions               |    35          |
+| N. Solutions Possible      | 10000          |
+| Perc. of Archive Filled    |     0          |
+| Number of generations      |    12          |
+| PLAYABILITY Sum (QD score) |    -4.37415    |
+| PLAYABILITY Mean           |    -0.124976   |
+| PLAYABILITY Std            |     0.259651   |
+| PLAYABILITY Min            |    -1.43831    |
+| PLAYABILITY Max            |    -0.00708661 |
 
 |             | Experiment 1                                                                      |
 |:------------|:----------------------------------------------------------------------------------|
@@ -102,15 +142,15 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |    102         |
-| N. Solutions Possible      |  10000         |
-| Perc. of Archive Filled    |      1         |
-| Number of generations      |   4701         |
-| RELIABILITY Sum (QD score) |   -415.515     |
-| RELIABILITY Mean           |     -4.07368   |
-| RELIABILITY Std            |      3.65381   |
-| RELIABILITY Min            |    -11.2698    |
-| RELIABILITY Max            |     -0.0046054 |
+| N. Solutions               |    35          |
+| N. Solutions Possible      | 10000          |
+| Perc. of Archive Filled    |     0          |
+| Number of generations      |    12          |
+| RELIABILITY Sum (QD score) |   -64.7698     |
+| RELIABILITY Mean           |    -1.85057    |
+| RELIABILITY Std            |     3.28135    |
+| RELIABILITY Min            |   -10.3822     |
+| RELIABILITY Max            |    -0.00358014 |
 
 |             | Experiment 1                                                                      |
 |:------------|:----------------------------------------------------------------------------------|
@@ -126,15 +166,15 @@
 
 |                          |   Experiment 1 |
 |:-------------------------|---------------:|
-| N. Solutions             |     82         |
+| N. Solutions             |     53         |
 | N. Solutions Possible    |  10000         |
 | Perc. of Archive Filled  |      1         |
-| Number of generations    |   4701         |
-| OBJECTIVE Sum (QD score) |    -59.099     |
-| OBJECTIVE Mean           |     -0.72072   |
-| OBJECTIVE Std            |      0.725609  |
-| OBJECTIVE Min            |     -5.57835   |
-| OBJECTIVE Max            |     -0.0198545 |
+| Number of generations    |     12         |
+| OBJECTIVE Sum (QD score) |    -34.9231    |
+| OBJECTIVE Mean           |     -0.658927  |
+| OBJECTIVE Std            |      0.782526  |
+| OBJECTIVE Min            |     -4.38379   |
+| OBJECTIVE Max            |     -0.0332452 |
 
 |           | Experiment 1                                                        |
 |:----------|:--------------------------------------------------------------------|
@@ -146,15 +186,15 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |     82         |
+| N. Solutions               |     53         |
 | N. Solutions Possible      |  10000         |
 | Perc. of Archive Filled    |      1         |
-| Number of generations      |   4701         |
-| PLAYABILITY Sum (QD score) |    -51.8122    |
-| PLAYABILITY Mean           |     -0.631856  |
-| PLAYABILITY Std            |      0.482669  |
-| PLAYABILITY Min            |     -1.91965   |
-| PLAYABILITY Max            |     -0.0188976 |
+| Number of generations      |     12         |
+| PLAYABILITY Sum (QD score) |    -29.7148    |
+| PLAYABILITY Mean           |     -0.560656  |
+| PLAYABILITY Std            |      0.588373  |
+| PLAYABILITY Min            |     -2.14843   |
+| PLAYABILITY Max            |     -0.0248031 |
 
 |             | Experiment 1                                                          |
 |:------------|:----------------------------------------------------------------------|
@@ -166,15 +206,15 @@
 
 |                            |   Experiment 1 |
 |:---------------------------|---------------:|
-| N. Solutions               |     82         |
-| N. Solutions Possible      |  10000         |
-| Perc. of Archive Filled    |      1         |
-| Number of generations      |   4701         |
-| RELIABILITY Sum (QD score) |     -6.34957   |
-| RELIABILITY Mean           |     -0.0774338 |
-| RELIABILITY Std            |      0.6124    |
-| RELIABILITY Min            |     -5.55472   |
-| RELIABILITY Max            |     -0         |
+| N. Solutions               |    53          |
+| N. Solutions Possible      | 10000          |
+| Perc. of Archive Filled    |     1          |
+| Number of generations      |    12          |
+| RELIABILITY Sum (QD score) |    -5.08923    |
+| RELIABILITY Mean           |    -0.0960232  |
+| RELIABILITY Std            |     0.596845   |
+| RELIABILITY Min            |    -4.35898    |
+| RELIABILITY Max            |    -0.00117188 |
 
 |             | Experiment 1                                                          |
 |:------------|:----------------------------------------------------------------------|

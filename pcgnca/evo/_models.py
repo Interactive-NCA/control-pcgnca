@@ -13,14 +13,7 @@ import numpy as np
 
 # --------------------- Models definition
 class NCA(nn.Module):
-    """
-    Warning
-    -------
-    The order of output channels should be as follows:
-    1. First n channels corresponds to the number of POSSIBLE TILES
-    2. If applicable, then follows BINARY channel
-    3. Last M channels correspond to the AUXILIARY channels 
-    """
+
     def __init__(self, n_tiles, n_aux_chan=0, bin_chan=False):
 
         # - Initialise the parent (torch nn module)
@@ -34,7 +27,7 @@ class NCA(nn.Module):
         self.has_binary = bin_chan
 
         # - Define architecture of the network
-        self.l1 = Conv2d(self.n_tiles + self.has_binary + self.n_aux, n_hid_1, 3, 1, 1, bias=True)
+        self.l1 = Conv2d(self.n_tiles + self.has_binary + self.n_aux, n_hid_1, kernel_size=3, stride=1, padding=1, bias=True)
         self.l2 = Conv2d(n_hid_1, n_hid_1, 1, 1, 0, bias=True)
         self.l3 = Conv2d(n_hid_1, self.n_tiles + self.n_aux, 1, 1, 0, bias=True)
         self.layers = [self.l1, self.l2, self.l3]

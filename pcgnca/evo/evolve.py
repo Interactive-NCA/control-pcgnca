@@ -76,11 +76,17 @@ class Evolver:
                 bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
 
                 # ----- Retrive the stats as desribed above
-                _, bcs = self._get_gen_sols_stats(gen_sols, init_states, None, bin_mask_zeros, "optimiser_stats")
-                objs, _ = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
+                objs_without, bcs_without = self._get_gen_sols_stats(gen_sols, init_states, None, bin_mask_zeros, "optimiser_stats")
+                objs_with, bcs_with = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
+
+                # ----- Save bcs and objs for comparison
+                n = len(gen_sols)
+                withoutfxs = [bcs_without[i] + [objs_without[i]] for i in range(n)]
+                withfxs = [bcs_with[i] + [objs_with[i]] for i in range(n)]
+                self._save_objs_bcs_for_comparison(withfxs, withoutfxs)
 
             # -- Send the stats back to the optimiser
-            self.scheduler.tell(objs, bcs)
+            self.scheduler.tell(objs_with, bcs_without)
 
             # -- Increment the number of completed generations
             self.completed_generations += 1
@@ -109,6 +115,30 @@ class Evolver:
         self._compute_archive_stats_on_unseen_seeds()
 
     # --------------------- Private functions (not exposed to cli)
+    def _save_objs_bcs_for_comparison(self, withfxs, withoutfxs):
+
+        # - Define the filename for storing the data
+        filename = "objs_bcs_history.csv"
+
+        # - Create Pandas DataFrame
+        n = len(withfxs)
+        df = pd.DataFrame(withoutfxs[i] + withfxs[i] for i in range(n))
+
+        # - Add column names
+        bc0_name, bc1_name = self.bcs[0], self.bcs[1]
+        df.columns = [f"{bc0_name}_without", f"{bc1_name}_without", "obj_without", f"{bc0_name}_with", f"{bc1_name}_with", "obj_with"]
+
+        # - If there is already dataframe, load it and add the results to it
+        path = os.path.join(self.save_path, filename)
+        if os.path.exists(path):
+            # -- Load
+            df_old = pd.read_csv(path)
+            # -- Add 
+            df = pd.concat([df, df_old], ignore_index=True)
+
+        # - Save
+        df.to_csv(path, index=False)
+
     def _compute_archive_stats_on_unseen_seeds(self):
 
         # INITIAL setup
@@ -162,7 +192,13 @@ class Evolver:
         assert fixed_states is None and binary_mask is None, "Incorrect evaluation setup!"
 
         # -- Run and evaluate the models
-        df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
+        # --- If model expects binary channel, create it (all zeros since there are no fixed tiles)
+        if fixed_tiles_archive is not None:
+            bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
+            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, bin_mask_zeros, "extended_stats")
+        # --- Else just let both fixed tiles and binary channel to be empty
+        else:
+            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
         
         # -- Evalute the df and save the results
         self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False)
