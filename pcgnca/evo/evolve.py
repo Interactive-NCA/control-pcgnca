@@ -80,10 +80,11 @@ class Evolver:
                 objs_with, bcs_with = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
 
                 # ----- Save bcs and objs for comparison
-                n = len(gen_sols)
-                withoutfxs = [bcs_without[i] + [objs_without[i]] for i in range(n)]
-                withfxs = [bcs_with[i] + [objs_with[i]] for i in range(n)]
-                self._save_objs_bcs_for_comparison(withfxs, withoutfxs)
+                if (itr % self.save_freq) == 0:
+                    n = len(gen_sols)
+                    withoutfxs = [bcs_without[i] + [objs_without[i]] for i in range(n)]
+                    withfxs = [bcs_with[i] + [objs_with[i]] for i in range(n)]
+                    self._save_objs_bcs_for_comparison(withfxs, withoutfxs)
 
             # -- Send the stats back to the optimiser
             self.scheduler.tell(objs_with, bcs_without)
