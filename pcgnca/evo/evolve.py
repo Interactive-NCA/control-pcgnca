@@ -65,29 +65,34 @@ class Evolver:
             init_states, fixed_states, binary_mask = self._get_latent_seeds()
 
             # -- Compute the objective values and BCs of the proposed solutions
-            # --- NO fixed seeds (baseline) = normal approach
-            if fixed_states is None:
-                objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
-            # --- Fixed seeds:
-            # ---- Compute BCs based on seeds WITHOUT fixed tiles
-            # ---- Compute objs based on seeds WITH  fixed tiles
-            else:
-                # ----- Generate bin mask full of zeroes since this model expexts bin channel
+            # --- STRATEGY 1: Compute objective values based on seeds with fixed tiles, BCs computed on seeds without fixed tiles
+            if self.evolve_strategy == "obj_based_on_swft":
+                # ---- Generate bin mask full of zeroes since this model expexts bin channel
                 bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
 
-                # ----- Retrive the stats as desribed above
+                # ---- Retrive the stats as desribed above
                 objs_without, bcs_without = self._get_gen_sols_stats(gen_sols, init_states, None, bin_mask_zeros, "optimiser_stats")
                 objs_with, bcs_with = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
 
-                # ----- Save bcs and objs for comparison
+                # ---- Save bcs and objs for comparison
                 if (itr % self.save_freq) == 0:
                     n = len(gen_sols)
                     withoutfxs = [bcs_without[i] + [objs_without[i]] for i in range(n)]
                     withfxs = [bcs_with[i] + [objs_with[i]] for i in range(n)]
                     self._save_objs_bcs_for_comparison(withfxs, withoutfxs)
 
-            # -- Send the stats back to the optimiser
-            self.scheduler.tell(objs_with, bcs_without)
+                # ---- Send the stats back to the optimiser
+                self.scheduler.tell(objs_with, bcs_without)
+
+            # --- STRATEGY DEFAULT: compute both objs and bcs based on given seeds
+            # Note: given seeds can be either just seeds with no fixed tiles, or seeds with fixed tiles
+            # This depends on the setting of the experiment
+            else:
+                # -- Evolve and compute the stats
+                objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
+
+                # -- Send the stats back to the optimiser
+                self.scheduler.tell(objs, bcs)
 
             # -- Increment the number of completed generations
             self.completed_generations += 1
@@ -231,7 +236,7 @@ class Evolver:
             # --- Initiliase the archive
             archive = GridArchive(
                 solution_dim=weights.shape[1],
-                dims=[self.n_models_per_dim for _ in self.bcs],
+                dims=[v for v in self.n_models_per_bc],
                 ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
             )
             # --- Add obtained solutions to the archive
@@ -246,11 +251,12 @@ class Evolver:
         df = archive.as_pandas()
 
         # - Compute the summary
+        max_n_solutions = self.n_models_per_bc[0]*self.n_models_per_bc[1]
         stats = {
             filename : self._get_metric_summary(df["objective"]),
             "N. Solutions" : len(df),
-            "N. Solutions Possible": self.n_models_per_dim**len(self.bcs),
-            "Perc. of Archive Filled": 100*round(len(df)/(self.n_models_per_dim**len(self.bcs)), 2),
+            "N. Solutions Possible": max_n_solutions,
+            "Perc. of Archive Filled": 100*round(len(df)/(max_n_solutions), 2),
             "Number of generations": self.completed_generations
         }
 
@@ -331,7 +337,8 @@ class Evolver:
                         self.n_steps,
                         self.overwrite,
                         obj_weights,
-                        to_return
+                        to_return,
+                        self.bcs
                 )
                 for model_w in gen_sols[n_launch * self.n_cores: (n_launch+1) * self.n_cores]
             ]
@@ -430,7 +437,7 @@ class Evolver:
         # - Define archive
         self.gen_archive = GridArchive(
             solution_dim=len(initial_w),
-            dims=[self.n_models_per_dim for _ in self.bcs],
+            dims=[v for v in self.n_models_per_bc],
             ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
         )
 

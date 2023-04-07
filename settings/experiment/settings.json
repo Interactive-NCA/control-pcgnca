@@ -1,6 +1,6 @@
 {
-    "experiment_id": 1,
-    "description" : "Test for shape of in and output",
+    "experiment_id": 3,
+    "description" : "Test of new bc - number of enemies.",
     "game": "zelda",
     "model_name": "NCA",
     "step_size": 0.05,
@@ -10,10 +10,10 @@
     "n_aux_chans": 8,
     "binary_channel": true,
     "fixed_tiles": true,
-    "fixed_tiles_difficulty": "manual",
+    "fixed_tiles_difficulty": "easy",
     "fixed_tiles_archive_size": 100,
+    "evolve_strategy": "obj_based_on_swft",
     "overwrite": true,
-    "n_models_per_dim": 100,
     "playability_weight": 1,
     "reliability_weight": 1
 }
