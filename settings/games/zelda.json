@@ -1,7 +1,7 @@
 {
-    "bcs": ["n_enemies", "path_length"],
-    "bcs_bounds": [[0, 3], [0, 271]],
-    "n_models_per_bc": [4, 100],
-    "n_tiles": 5,
+    "bcs": ["symmetry", "path_length"],
+    "bcs_bounds": [[0, 1], [0, 271]],
+    "n_models_per_bc": [100, 100],
+    "n_tiles": 4,
     "grid_dim": 16
 }
