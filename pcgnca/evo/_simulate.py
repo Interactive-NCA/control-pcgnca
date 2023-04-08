@@ -20,10 +20,11 @@ def simulate(
     n_steps,
     overwrite,
     obj_weights,
-    to_return
+    to_return,
+    bcs
 ):
     states_copy = np.copy(init_states)
-    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite, obj_weights, to_return)
+    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite, obj_weights, to_return, bcs)
 
 def _simulate(
     model,
@@ -34,11 +35,12 @@ def _simulate(
     n_steps,
     overwrite,
     obj_weights,
-    to_return
+    to_return,
+    bcs
 ):
 
     # - Initialise the evaluator
-    evaluator = ZeldaEvaluation(init_states.shape[1], obj_weights, n_tile_types)
+    evaluator = ZeldaEvaluation(init_states.shape[1], obj_weights, n_tile_types, bcs)
  
     # - Let the model go over each init state for N steps
     # and collect the stats for each level generation

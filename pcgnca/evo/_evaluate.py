@@ -7,15 +7,16 @@ import numpy as np
 
 class ZeldaEvaluation:
 
-    def __init__(self, dim, obj_weights, n_tiles):
+    def __init__(self, dim, obj_weights, n_tiles, bcs):
 
         # - User defined attributes
         self.dim = dim
         self.obj_weights = obj_weights
         self.n_tiles = n_tiles
+        self.bcs = bcs
 
         # - Should enemies be excluded from playability penalty
-        if self.n_tiles == 8:
+        if self.n_tiles > 4:
             self.exclude_enemy = False
         else:
             self.exclude_enemy = True
@@ -27,7 +28,7 @@ class ZeldaEvaluation:
             "n_doors": 1,
             "n_regions": 1,
             "nearest_enemy": (5, 144),
-            "n_enemies": (2, 5)
+            "n_enemies": (0, 3)
         }
 
         # - Define reward weights
@@ -36,9 +37,9 @@ class ZeldaEvaluation:
             "n_keys": 3,
             "n_doors": 3,
             "n_regions": 5,
-            "n_enemies": 1,
+            "n_enemies": 5,
             "nearest_enemy": 2,
-            "path_length": 1
+            "path_length": 5
         }
 
         # - Bounds (TODO: get understanding of this section)
@@ -63,18 +64,11 @@ class ZeldaEvaluation:
     def evaluate_level_batch(self, batch_stats, to_return="optimiser_stats"):
 
         # - Reliability
-        # -- Symmetry
-        symmetries = np.array([s["symmetry"] for s in batch_stats])
-        symmetry_std = np.array(symmetries).std()
-        symmetry_mean = np.array(symmetries).mean()
-
-        # -- Path length
-        path_lengths = np.array([s["path_length"] for s in batch_stats])
-        path_length_std = np.array(path_lengths).std()
-        path_length_mean = np.array(path_lengths).mean()
+        # -- Get needed stats about bcs
+        bc_stats = self._get_bc_stats(batch_stats)
 
         # -- Compute reliability penalty
-        final_reliability_penalty = -self.obj_weights["reliability"]*((symmetry_std + path_length_std)/2)
+        final_reliability_penalty = -self.obj_weights["reliability"]*bc_stats["reliability"]
 
         # - Playbility
         # we want to hit each of our rules exactly, penalize for anything else.
@@ -119,12 +113,14 @@ class ZeldaEvaluation:
         objective = final_playability_penalty + final_reliability_penalty
 
         # - Return expected output
+        # -- Get bcs value
+        bc0, bc1 = bc_stats[self.bcs[0]]["mean"], bc_stats[self.bcs[1]]["mean"]
         # -- Extended stats
         if to_return == "extended_stats":
-            return [objective, final_playability_penalty, final_reliability_penalty, symmetry_mean, path_length_mean]
+            return [objective, final_playability_penalty, final_reliability_penalty, bc0, bc1]
         # -- Default: stats needed for the optimiser
         else:
-            return [objective, symmetry_mean, path_length_mean]
+            return [objective, bc0, bc1]
 
     def get_zelda_level_stats(self, level):
         """
@@ -162,10 +158,8 @@ class ZeldaEvaluation:
 
                 # --- Collect all the enemies position in the map
                 enemies = []
-                enemies.extend(tiles_loc[5])
-                enemies.extend(tiles_loc[6])
-                enemies.extend(tiles_loc[7])
-
+                for i in range(5, self.n_tiles):
+                    enemies.extend(tiles_loc[i])
 
                 # --- Compute shortest path from the zelda to each enemy and then find the min distance
                 if len(enemies) > 0:
@@ -196,11 +190,12 @@ class ZeldaEvaluation:
                 stats["path_length"] += dijkstra_d[d_y][d_x]
 
         # - Calculate symmetry
-        stats["symmetry"] = get_sym(level, self.dim)
+        if "symmetry" in self.bcs:
+            stats["symmetry"] = get_sym(level, self.dim)
 
         return stats
     
-    def normalise(self, var):
+    def _normalise(self, var):
         """Use standard scaler to normalise given variable.
         """
 
@@ -213,7 +208,30 @@ class ZeldaEvaluation:
         # - z-score
         norm = (var - m)/std
 
-        return norm 
+        return norm
+    
+    def _get_bc_stats(self, batch_stats):
+
+        # - Save the result into a dict for easy querying
+        result = dict()
+
+        # - Compute the stats
+        for bc in self.bcs:
+            
+            # -- Extract the values
+            values = np.array([s[bc] for s in batch_stats])
+
+            # -- Get the stats
+            std = np.array(values).std()
+            mean = np.array(values).mean()
+
+            # -- Save it
+            result[bc] = {"std": std, "mean": mean}
+        
+        # - Compute the average of both bcs std (a.k.a. unnormalised reliability score)
+        result["reliability"] = (result[self.bcs[0]]["std"] + result[self.bcs[1]]["std"])/2
+        
+        return result
 
 # --------------------- Helper functions
 # ------------------------ Public functions

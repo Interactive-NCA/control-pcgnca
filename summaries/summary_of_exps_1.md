@@ -62,36 +62,36 @@
 
 |               |   Experiment 1 |
 |:--------------|---------------:|
-| bc0_diff mean |    0.144125    |
-| bc0_diff min  |    0.000390625 |
-| bc0_diff 25%  |    0.0459961   |
-| bc0_diff 50%  |    0.096875    |
-| bc0_diff 75%  |    0.220605    |
-| bc0_diff max  |    0.551172    |
+| bc0_diff mean |      0.170649  |
+| bc0_diff min  |      0         |
+| bc0_diff 25%  |      0.0535156 |
+| bc0_diff 50%  |      0.117578  |
+| bc0_diff 75%  |      0.272852  |
+| bc0_diff max  |      0.626953  |
 
 
 👉 **bc1_diff**
 
 |               |   Experiment 1 |
 |:--------------|---------------:|
-| bc1_diff mean |          2.116 |
-| bc1_diff min  |          0     |
-| bc1_diff 25%  |          0     |
-| bc1_diff 50%  |          0     |
-| bc1_diff 75%  |          2.9   |
-| bc1_diff max  |         11.4   |
+| bc1_diff mean |        3.99343 |
+| bc1_diff min  |        0       |
+| bc1_diff 25%  |        0       |
+| bc1_diff 50%  |        0       |
+| bc1_diff 75%  |        5.6     |
+| bc1_diff max  |       25.7     |
 
 
 👉 **obj_diff**
 
 |               |   Experiment 1 |
 |:--------------|---------------:|
-| obj_diff mean |     2.21322    |
-| obj_diff min  |     0.00367848 |
-| obj_diff 25%  |     0.207606   |
-| obj_diff 50%  |     0.728594   |
-| obj_diff 75%  |     4.22552    |
-| obj_diff max  |     8.15476    |
+| obj_diff mean |     2.42144    |
+| obj_diff min  |     0.00140965 |
+| obj_diff 25%  |     0.230569   |
+| obj_diff 50%  |     0.814547   |
+| obj_diff 75%  |     5.29012    |
+| obj_diff max  |     9.31454    |
 
 
 ### 🎯 Evaluation on seeds WITH Fixed tiles
