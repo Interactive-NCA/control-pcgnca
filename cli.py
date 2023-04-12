@@ -8,13 +8,15 @@ import os
 
 # ------- Internal library imports
 from pcgnca.utils import get_settings, get_evolver, generate_fixed_tiles, \
-get_experiments_summary, from_experimentid_to_evolver, get_slurm_file, from_experimentid_to_settings
+get_experiments_summary, from_experimentid_to_evolver, get_slurm_file, from_experimentid_to_settings, \
+transfer_exp_folder
 
 # ------- Global vars definition
 SETTINGS_LOAD_PATH = "settings"
 EXPERIMENT_SAVE_PATH = "experiments"
 GRAPHICS_PATH = os.path.join("assets", "games")
 SUMMARIES_PATH = "summaries"
+TRANSFER_PATH = "fortransfer"
 
 # ------- CLI arguments definition
 parser = argparse.ArgumentParser(
@@ -25,10 +27,13 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--train', action='store_true', default=False)
 parser.add_argument('--evaluate', action='store_true', default=False)
 parser.add_argument('--summarise', action='store', type=str)
+parser.add_argument('--file-transfer', action='store_true', default=False)
 parser.add_argument('--gen-slurm-script', action='store_true', default=False)
 parser.add_argument('--gen-fixed-seeds', action='store_true', default=False)
 
 # --- Hyper-parameters for activities
+# ---- For file transfer between server and local
+parser.add_argument('--server-to-local', action='store_true', default=False)
 # ---- General
 parser.add_argument('--n_cores', action='store', type=int)
 parser.add_argument('--n_generations', action='store', type=int)
@@ -37,6 +42,10 @@ parser.add_argument('--expid', action='store', type=int, default=None)
 
 # ---- For slurm file generation
 parser.add_argument('--timeout_after', action='store', type=str, default=None)
+
+# ---- For file transfer
+parser.add_argument('--save_where', action='store', type=str, default=None)
+parser.add_argument('--files_exclude', action='store', type=str, default="")
 
 # ---- For fixed input seeds generation
 parser.add_argument('--fixedgen-game', action='store')
@@ -50,6 +59,10 @@ args = parser.parse_args()
 # -------- Assertions (note that certain assetion function may overlap ...
 # ... to me this is way clearer since you can look for each activity what exactly ...
 # ... needs to be provided)
+def run_file_transfer_assertions():
+    assert args.save_where is not None, "Have to specify where to save the copied result"
+    assert args.expid is not None, "You need to specify which experiment you want to evalaute via --expid"
+
 def run_training_assertions():
     assert args.n_cores is not None, "You must specify --n_cores flag denoting how many cpu cores should be used"
     assert args.n_generations is not None, "You must specify --n_generations flag denoting generations the archive should go through"
@@ -109,6 +122,28 @@ def load_evolver():
 
 # ------- Execution based on flags
 def main():
+
+    # TRANSFERING FILES
+    # - Server to local
+    if args.file_transfer:
+
+        # -- Run assertions
+        run_file_transfer_assertions()
+
+        # -- Load slurm settings
+        with open(os.path.join(SETTINGS_LOAD_PATH, "slurm", "settings.json")) as f:
+            s = json.load(f)
+
+        # -- Prepare the content for transfer and then generate the command
+        transfer_exp_folder(
+            from_server=args.server_to_local,
+            save_path=EXPERIMENT_SAVE_PATH,
+            transfer_path=TRANSFER_PATH,
+            username_and_domain=f"{s['username']}@{s['domain']}",
+            target_path=args.save_where,
+            expid=args.expid,
+            exclude=args.files_exclude
+        )
 
     # GENERATION OF SLURM SCRIPT
     if args.gen_slurm_script:

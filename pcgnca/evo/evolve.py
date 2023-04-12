@@ -65,22 +65,34 @@ class Evolver:
             init_states, fixed_states, binary_mask = self._get_latent_seeds()
 
             # -- Compute the objective values and BCs of the proposed solutions
-            # --- NO fixed seeds (baseline) = normal approach
-            if fixed_states is None:
-                objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
-            # --- Fixed seeds:
-            # ---- Compute BCs based on seeds WITHOUT fixed tiles
-            # ---- Compute objs based on seeds WITH  fixed tiles
-            else:
-                # ----- Generate bin mask full of zeroes since this model expexts bin channel
+            # --- STRATEGY 1: Compute objective values based on seeds with fixed tiles, BCs computed on seeds without fixed tiles
+            if self.evolve_strategy == "obj_based_on_swft":
+                # ---- Generate bin mask full of zeroes since this model expexts bin channel
                 bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
 
-                # ----- Retrive the stats as desribed above
-                _, bcs = self._get_gen_sols_stats(gen_sols, init_states, None, bin_mask_zeros, "optimiser_stats")
-                objs, _ = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
+                # ---- Retrive the stats as desribed above
+                objs_without, bcs_without = self._get_gen_sols_stats(gen_sols, init_states, None, bin_mask_zeros, "optimiser_stats")
+                objs_with, bcs_with = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
 
-            # -- Send the stats back to the optimiser
-            self.scheduler.tell(objs, bcs)
+                # ---- Save bcs and objs for comparison
+                if (itr % self.save_freq) == 0:
+                    n = len(gen_sols)
+                    withoutfxs = [bcs_without[i] + [objs_without[i]] for i in range(n)]
+                    withfxs = [bcs_with[i] + [objs_with[i]] for i in range(n)]
+                    self._save_objs_bcs_for_comparison(withfxs, withoutfxs)
+
+                # ---- Send the stats back to the optimiser
+                self.scheduler.tell(objs_with, bcs_without)
+
+            # --- STRATEGY DEFAULT: compute both objs and bcs based on given seeds
+            # Note: given seeds can be either just seeds with no fixed tiles, or seeds with fixed tiles
+            # This depends on the setting of the experiment
+            else:
+                # -- Evolve and compute the stats
+                objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
+
+                # -- Send the stats back to the optimiser
+                self.scheduler.tell(objs, bcs)
 
             # -- Increment the number of completed generations
             self.completed_generations += 1
@@ -109,6 +121,30 @@ class Evolver:
         self._compute_archive_stats_on_unseen_seeds()
 
     # --------------------- Private functions (not exposed to cli)
+    def _save_objs_bcs_for_comparison(self, withfxs, withoutfxs):
+
+        # - Define the filename for storing the data
+        filename = "objs_bcs_history.csv"
+
+        # - Create Pandas DataFrame
+        n = len(withfxs)
+        df = pd.DataFrame(withoutfxs[i] + withfxs[i] for i in range(n))
+
+        # - Add column names
+        bc0_name, bc1_name = self.bcs[0], self.bcs[1]
+        df.columns = [f"{bc0_name}_without", f"{bc1_name}_without", "obj_without", f"{bc0_name}_with", f"{bc1_name}_with", "obj_with"]
+
+        # - If there is already dataframe, load it and add the results to it
+        path = os.path.join(self.save_path, filename)
+        if os.path.exists(path):
+            # -- Load
+            df_old = pd.read_csv(path)
+            # -- Add 
+            df = pd.concat([df, df_old], ignore_index=True)
+
+        # - Save
+        df.to_csv(path, index=False)
+
     def _compute_archive_stats_on_unseen_seeds(self):
 
         # INITIAL setup
@@ -120,22 +156,20 @@ class Evolver:
         # - Get setup of the evolver before going through evaluation
         # This to ensure that the state of evolve before and after evalution is the same
         fixed_tiles_archive = self.fixed_tiles_arch
-        bin_channel = self.binary_channel
-        model = self.gen_model
+        overwrite = self.overwrite
 
         # FIXED tiles eval
         # --------------------
         self.logger.working_on("Summarising performance of trained archive on NEW seeds with FIXED TILES ...")
         # - Assertions of assumptions
-        # -- Make sure that fixed tiles archive is loaded
+        # -- Make sure that fixed tiles archive is loaded --> this is to ensure that _get_latent_seeds generates also fixed states (tiles)
         if self.fixed_tiles_arch is None:
             self._load_fixed_tiles_arch() # it is now available under self.fixed_tiles_arch
         
-        # -- Make sure the model can take into account bin channel
-        if not self.binary_channel:
-            self.binary_channel = True
-            self._init_model() # now the model with bin channle available under self.gen_model
-
+        # -- Make sure overwriting is enabled
+        # (this means that after each step, we make sure that fix tiles do not get changed)
+        self.overwrite = True
+        
         # - Evaluate the archive on seeds with fixed tiles --> since the fixed
         #   tiles archive is loaded, _get_latent_seeds knows to generate seeds with fixed tiles
         # -- Generate the seeds
@@ -155,9 +189,8 @@ class Evolver:
         # -- Set the fixed tiles archive to none --> no fixed seeds
         self.fixed_tiles_arch = None
 
-        # -- the model has no binary channel
-        self.binary_channel = False
-        self._init_model()
+        # -- No fixed seeds no need for overwrite
+        self.overwrite = False
 
         # - Evaluate the archive on seeds with NO fixed tiles
         # -- Generate the seeds
@@ -165,7 +198,13 @@ class Evolver:
         assert fixed_states is None and binary_mask is None, "Incorrect evaluation setup!"
 
         # -- Run and evaluate the models
-        df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
+        # --- If model expects binary channel, create it (all zeros since there are no fixed tiles)
+        if fixed_tiles_archive is not None:
+            bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
+            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, bin_mask_zeros, "extended_stats")
+        # --- Else just let both fixed tiles and binary channel to be empty
+        else:
+            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
         
         # -- Evalute the df and save the results
         self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False)
@@ -173,8 +212,7 @@ class Evolver:
         # CLEANUP
         # --------------------
         self.fixed_tiles_arch = fixed_tiles_archive 
-        self.binary_channel = bin_channel
-        self.gen_model = model
+        self.overwrite = overwrite
 
     def _compute_eval_archive_stats(self, df, weights, fixed_seeds):
 
@@ -198,7 +236,7 @@ class Evolver:
             # --- Initiliase the archive
             archive = GridArchive(
                 solution_dim=weights.shape[1],
-                dims=[self.n_models_per_dim for _ in self.bcs],
+                dims=[v for v in self.n_models_per_bc],
                 ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
             )
             # --- Add obtained solutions to the archive
@@ -213,11 +251,12 @@ class Evolver:
         df = archive.as_pandas()
 
         # - Compute the summary
+        max_n_solutions = self.n_models_per_bc[0]*self.n_models_per_bc[1]
         stats = {
             filename : self._get_metric_summary(df["objective"]),
             "N. Solutions" : len(df),
-            "N. Solutions Possible": self.n_models_per_dim**len(self.bcs),
-            "Perc. of Archive Filled": 100*round(len(df)/(self.n_models_per_dim**len(self.bcs)), 2),
+            "N. Solutions Possible": max_n_solutions,
+            "Perc. of Archive Filled": 100*round(len(df)/(max_n_solutions), 2),
             "Number of generations": self.completed_generations
         }
 
@@ -238,12 +277,12 @@ class Evolver:
         
         # - Create a visualisation of the archive
         title = f"{filename} function value across archive"
-        fig = self._get_archive_heatmap(title)
+        fig = self._get_archive_heatmap(title, archive)
         fig.savefig(os.path.join(dir_path, f"{filename}.png"))
     
-    def _get_archive_heatmap(self, title):
+    def _get_archive_heatmap(self, title, archive):
         fig, ax = plt.subplots(figsize=(8, 6))
-        grid_archive_heatmap(self.gen_archive, ax=ax, vmin=0, vmax=-25)
+        grid_archive_heatmap(archive, ax=ax, vmin=0, vmax=-25)
         ax.set_title(title)
         ax.set_xlabel(self.bcs[0])
         ax.set_ylabel(self.bcs[1])
@@ -298,7 +337,8 @@ class Evolver:
                         self.n_steps,
                         self.overwrite,
                         obj_weights,
-                        to_return
+                        to_return,
+                        self.bcs
                 )
                 for model_w in gen_sols[n_launch * self.n_cores: (n_launch+1) * self.n_cores]
             ]
@@ -397,7 +437,7 @@ class Evolver:
         # - Define archive
         self.gen_archive = GridArchive(
             solution_dim=len(initial_w),
-            dims=[self.n_models_per_dim for _ in self.bcs],
+            dims=[v for v in self.n_models_per_bc],
             ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
         )
 
@@ -457,7 +497,7 @@ class Evolver:
         # -- Get the figure and save it
         n_gens = self.completed_generations if self.completed_generations else 0 
         title = f"After {n_gens} generations"
-        fig = self._get_archive_heatmap(title)
+        fig = self._get_archive_heatmap(title, self.gen_archive)
         fig.savefig(os.path.join(archive_snaps_path, f"ngens_{n_gens}.png")) 
 
         # - Save the evolver 

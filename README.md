@@ -42,3 +42,13 @@ Before summarising given experiments, make sure you evaluted each of them so you
 ```
 python3 cli.py --summarise "1,2,3"
 ```
+
+### File transfer
+Note that `--files_exclude` should be comma separated list of files or directories to exclude. Finally, before starting, checkout
+the `settings/slurm/settings.json`, here you can specify parameters such as `domain` (of the server) and `username`.
+
+#### From server to local
+python3 cli.py --file-transfer --save_where "test/" --expid 2 --files_exclude "evolver.pkl" --server-to-local
+
+#### From local to server
+python3 cli.py --file-transfer --save_where "test/" --expid 2 --files_exclude "evolver.pkl"
