@@ -398,6 +398,7 @@ class Evolver:
                         self.n_tiles,
                         self.n_steps,
                         self.overwrite,
+                        self.padding_type,
                         obj_weights,
                         to_return,
                         self.bcs
