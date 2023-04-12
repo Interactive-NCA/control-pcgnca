@@ -1,3 +1,5 @@
+:construction: **NOTE:** this repository is still under active development and therefore the documentation still has to be polished 
+
 ## About
 Platform for experimentation with generating game levels via archive of Neural Cellular Automata.
 
