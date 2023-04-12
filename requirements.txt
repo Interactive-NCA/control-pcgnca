@@ -1,7 +1,7 @@
 numpy
 pandas
 ray[default]
-ribs
+ribs==0.5.1
 rich
 tqdm
 torch
