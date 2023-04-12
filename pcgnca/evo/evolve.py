@@ -55,6 +55,10 @@ class Evolver:
 
         self.logger.section_start(":microbe: Evolution")
 
+        # - Keep track of latent seeds generated
+        # the shape is: total_number of stored training batches x gen_num (1) x type (3) x batch_size (?) x dim (16) x dim (16)
+        latent_seeds = None
+
         # - Main training loop
         for itr in tqdm(range(self.completed_generations, int(self.n_generations) + 1)):
 
@@ -81,8 +85,12 @@ class Evolver:
                     withfxs = [bcs_with[i] + [objs_with[i]] for i in range(n)]
                     self._save_objs_bcs_for_comparison(withfxs, withoutfxs)
 
+                # -- Add metadata for each added solution
+                gen_number = self.completed_generations + 1
+                meta = [gen_number for _ in range(len(gen_sols))]
+
                 # ---- Send the stats back to the optimiser
-                self.scheduler.tell(objs_with, bcs_without)
+                self.scheduler.tell(objs_with, bcs_without, meta)
 
             # --- STRATEGY DEFAULT: compute both objs and bcs based on given seeds
             # Note: given seeds can be either just seeds with no fixed tiles, or seeds with fixed tiles
@@ -91,14 +99,34 @@ class Evolver:
                 # -- Evolve and compute the stats
                 objs, bcs = self._get_gen_sols_stats(gen_sols, init_states, fixed_states, binary_mask, "optimiser_stats")
 
+                # -- Add metadata for each added solution
+                gen_number = self.completed_generations + 1
+                meta = [gen_number for _ in range(len(gen_sols))]
+
                 # -- Send the stats back to the optimiser
-                self.scheduler.tell(objs, bcs)
+                self.scheduler.tell(objs, bcs, meta)
 
             # -- Increment the number of completed generations
             self.completed_generations += 1
 
-            # -- Save the evolver if neccessary
+            # -- Save the seeds on which the generation was trained
+            # --- Collect the arrs in a list
+            arrs = [init_states, fixed_states, binary_mask]
+            if latent_seeds is None:
+                latent_seeds = self._get_training_seed_batch_to_add(arrs)
+            else:
+                to_add = self._get_training_seed_batch_to_add(arrs)
+                if len(latent_seeds.shape) == 5:
+                    latent_seeds = np.append(latent_seeds[np.newaxis, :], to_add[np.newaxis, :], axis=0)
+                else:
+                    latent_seeds = np.append(latent_seeds, to_add[np.newaxis, :], axis=0)
+
+            # -- Save the evolver and its context info based on freq interval
             if (itr % self.save_freq) == 0:
+                # Save training seeds and set the latent seeds to None
+                latent_seeds = self._save_training_seeds(latent_seeds)
+
+                # Save the evolver 
                 self._save()
 
     def evaluate_archive(self):
@@ -121,6 +149,40 @@ class Evolver:
         self._compute_archive_stats_on_unseen_seeds()
 
     # --------------------- Private functions (not exposed to cli)
+    def _get_training_seed_batch_to_add(self, arrs):        
+        # - Create new arrays
+        new_arrs = []
+
+        # - Add a 4th dim
+        for a in arrs:
+            new_arrs.append(a[np.newaxis, :, :, :])
+
+        # - Concat them together along the new axis
+        tmp = np.concatenate(new_arrs, axis=0)
+        assert tmp.shape[0] == 3, "Incorrect first dim, must be 3!"
+
+        # - Add a 5th dim for which gen they belong to
+        tmp = tmp[np.newaxis, :, :, :, :]
+        tmp[0] = self.completed_generations
+
+        return tmp
+
+    def _save_training_seeds(self, seeds):
+        
+        # - Merge new training seeds with the existing seeds (if exists)
+        filename = "training_seeds.npy"
+        path = os.path.join(self.save_path, filename)
+        if os.path.exists(path):
+            # -- Load
+            previous_seeds = np.load(path, allow_pickle=True)
+
+            # -- Merge
+            seeds = np.concatenate((previous_seeds, seeds), axis=0)
+        
+        # - Save the seeds
+        np.save(path, seeds, allow_pickle=True)
+
+
     def _save_objs_bcs_for_comparison(self, withfxs, withoutfxs):
 
         # - Define the filename for storing the data
@@ -485,7 +547,7 @@ class Evolver:
     def _save(self):
 
         # - Save the archive as csv
-        df = self.gen_archive.as_pandas()
+        df = self.gen_archive.as_pandas(include_metadata=True)
         df.to_csv(os.path.join(self.save_path, "trained_archive.csv"))
 
         # - Save the heatmap of the archive
