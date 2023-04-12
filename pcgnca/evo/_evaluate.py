@@ -16,7 +16,7 @@ class ZeldaEvaluation:
         self.bcs = bcs
 
         # - Should enemies be excluded from playability penalty
-        if self.n_tiles > 4:
+        if self.n_tiles > 5:
             self.exclude_enemy = False
         else:
             self.exclude_enemy = True
