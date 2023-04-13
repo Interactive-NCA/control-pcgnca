@@ -1,5 +1,5 @@
 {
-    "experiment_id": 7,
+    "experiment_id": 8,
     "description" : "lukas test",
     "game": "zelda",
     "model_name": "NCA",
@@ -10,7 +10,7 @@
     "n_aux_chans": 8,
     "binary_channel": true,
     "fixed_tiles": true,
-    "fixed_tiles_difficulty": "manual",
+    "fixed_tiles_difficulty": "easy",
     "fixed_tiles_archive_size": 100,
     "evolve_strategy": "obj_based_on_swft",
     "padding_type": 0,
