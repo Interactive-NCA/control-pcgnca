@@ -19,12 +19,13 @@ def simulate(
     n_tile_types,
     n_steps,
     overwrite,
+    padding_type,
     obj_weights,
     to_return,
     bcs
 ):
     states_copy = np.copy(init_states)
-    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite, obj_weights, to_return, bcs)
+    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite, padding_type, obj_weights, to_return, bcs)
 
 def _simulate(
     model,
@@ -34,6 +35,7 @@ def _simulate(
     n_tile_types,
     n_steps,
     overwrite,
+    padding_type,
     obj_weights,
     to_return,
     bcs
@@ -53,19 +55,19 @@ def _simulate(
         # ---- add binary channel
         # ---- Rest same as with no fixed tiles (see below)
         if fixed_tiles is not None and binary_mask is not None:
-            in_tensor = _preprocess_input(init_states[state_i], n_tile_types, fixed_tiles[state_i], binary_mask[state_i], overwrite)
+            in_tensor = _preprocess_input(init_states[state_i], n_tile_types, padding_type, fixed_tiles[state_i], binary_mask[state_i], overwrite)
 
         # --- Only bin mask =
         # ---- Add bin channel
         # ---- Rest same as with no fixed tiles
         elif binary_mask is not None:
-            in_tensor = _preprocess_input(init_states[state_i], n_tile_types, None, binary_mask[state_i], overwrite)
+            in_tensor = _preprocess_input(init_states[state_i], n_tile_types, padding_type, None, binary_mask[state_i], overwrite)
         
         # --- NO fixed tiles and Bin mask=
         # ---- One hot encode the channels
         # ---- Convert the numpy array to PyTorch's tensor
         else:
-            in_tensor = _preprocess_input(init_states[state_i], n_tile_types)
+            in_tensor = _preprocess_input(init_states[state_i], n_tile_types, padding_type)
 
         
         # -- Run the forward pass for n_steps
@@ -83,11 +85,11 @@ def _simulate(
 
             # --- Setup the input for the model again
             if fixed_tiles is not None and binary_mask is not None:
-                in_tensor = _preprocess_input(level, n_tile_types, fixed_tiles[state_i], binary_mask[state_i], overwrite)
+                in_tensor = _preprocess_input(level, n_tile_types, padding_type, fixed_tiles[state_i], binary_mask[state_i], overwrite)
             elif binary_mask is not None:
-                in_tensor = _preprocess_input(init_states[state_i], n_tile_types, None, binary_mask[state_i], overwrite)
+                in_tensor = _preprocess_input(init_states[state_i], n_tile_types, padding_type, None, binary_mask[state_i], overwrite)
             else:
-                in_tensor = _preprocess_input(level, n_tile_types)
+                in_tensor = _preprocess_input(level, n_tile_types, padding_type)
 
         # -- Reset the auxiliary channels for the next input seed to zero
         model.reset()
@@ -107,11 +109,15 @@ def _simulate(
     else:
         return evaluator.evaluate_level_batch(batch_stats, to_return)
 
-def _preprocess_input(seed, n_tile_types, fixed=None, bin_mask=None, overwrite=False):
+def _preprocess_input(seed, n_tile_types, padding_type, fixed=None, bin_mask=None, overwrite=False):
     
     # --- Overwrite = Make sure that model always receive the fixed tiles
     if overwrite and fixed is not None:
         np.putmask(seed, bin_mask, fixed)
+
+    # --- Pad the seed and binary mask
+    seed = np.pad(seed, 1, mode="constant", constant_values=padding_type)
+    bin_mask = np.pad(bin_mask, 1, mode="constant", constant_values=0)
 
     # --- One hot encode the seed
     seed_encoded = (np.arange(n_tile_types) == seed[..., None]).astype(int)

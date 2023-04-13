@@ -13,6 +13,7 @@
     "fixed_tiles_difficulty": "easy",
     "fixed_tiles_archive_size": 100,
     "evolve_strategy": "default",
+    "padding_type": 0,
     "overwrite": false,
     "playability_weight": 1,
     "reliability_weight": 1
