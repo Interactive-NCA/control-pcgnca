@@ -1,6 +1,6 @@
 {
-    "experiment_id": 2,
-    "description" : "showing to lars how my codebase w orksj",
+    "experiment_id": 8,
+    "description" : "lukas test",
     "game": "zelda",
     "model_name": "NCA",
     "step_size": 0.05,
@@ -13,6 +13,7 @@
     "fixed_tiles_difficulty": "easy",
     "fixed_tiles_archive_size": 100,
     "evolve_strategy": "obj_based_on_swft",
+    "padding_type": 0,
     "overwrite": true,
     "playability_weight": 1,
     "reliability_weight": 1

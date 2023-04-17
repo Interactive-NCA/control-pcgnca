@@ -7,6 +7,7 @@ provides helper functions for setting up models.
 import torch as th
 from torch import nn
 from torch.nn import Conv2d
+import torch.nn.functional as F
 
 import numpy as np
 
@@ -27,7 +28,7 @@ class NCA(nn.Module):
         self.has_binary = bin_chan
 
         # - Define architecture of the network
-        self.l1 = Conv2d(self.n_tiles + self.has_binary + self.n_aux, n_hid_1, kernel_size=3, stride=1, padding=1, bias=True)
+        self.l1 = Conv2d(self.n_tiles + self.has_binary + self.n_aux, n_hid_1, kernel_size=3, stride=1, padding=0, bias=True)
         self.l2 = Conv2d(n_hid_1, n_hid_1, 1, 1, 0, bias=True)
         self.l3 = Conv2d(n_hid_1, self.n_tiles + self.n_aux, 1, 1, 0, bias=True)
         self.layers = [self.l1, self.l2, self.l3]
@@ -36,7 +37,7 @@ class NCA(nn.Module):
         # - Initialise weights according to the best practices (based on actual research)
         self.apply(_init_weights)
 
-    def forward(self, x, **kwargs):
+    def forward(self, x):
 
         # Since we do not use gradient based optimisation,
         # disable computation of gradient which reduces memory consumption 
@@ -73,6 +74,7 @@ class NCA(nn.Module):
 
                 # -- Getting the aux channels (the last M channels)
                 self.last_aux = x[:,-self.n_aux:,:,:]
+                self.last_aux = F.pad(self.last_aux, (1,1,1,1), mode='constant', value=0)
 
                 # -- Getting the actual output
                 x = x[:, :self.n_tiles,:,:]
