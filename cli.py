@@ -45,7 +45,7 @@ parser.add_argument('--timeout_after', action='store', type=str, default=None)
 
 # ---- For file transfer
 parser.add_argument('--save_where', action='store', type=str, default=None)
-parser.add_argument('--files_exclude', action='store', type=str, default="")
+parser.add_argument('--files_exclude', action='store', type=str, default=None)
 
 # ---- For fixed input seeds generation
 parser.add_argument('--fixedgen-game', action='store')

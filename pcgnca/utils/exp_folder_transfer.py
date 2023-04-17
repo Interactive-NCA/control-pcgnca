@@ -32,8 +32,6 @@ def transfer_exp_folder(from_server, save_path, transfer_path, username_and_doma
     shutil.copytree(exp_path, copy_to)
 
     # -- Remove files/folders as specified in the copied version
-    # os.rmfile
-    # shututil.rmtree
     if exclude is not None:
         to_remove = exclude.split(",")
         for item in to_remove:
