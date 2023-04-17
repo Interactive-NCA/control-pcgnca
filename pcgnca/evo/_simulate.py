@@ -115,13 +115,15 @@ def _preprocess_input(seed, n_tile_types, padding_type, fixed=None, bin_mask=Non
     if overwrite and fixed is not None:
         np.putmask(seed, bin_mask, fixed)
 
-    # --- Pad the seed and binary mask
-    seed = np.pad(seed, 1, mode="constant", constant_values=padding_type)
+    # --- Pad the binary mask
     bin_mask = np.pad(bin_mask, 1, mode="constant", constant_values=0)
 
     # --- One hot encode the seed
     seed_encoded = (np.arange(n_tile_types) == seed[..., None]).astype(int)
     seed_encoded = seed_encoded.transpose(2, 0, 1)
+
+    # --- Pad the one hot encoded seed 
+    seed_encoded = np.pad(seed_encoded, ((0,0), (1,1), (1,1)), mode='constant', constant_values=padding_type)
 
     # --- Add binary channel
     if bin_mask is not None:
