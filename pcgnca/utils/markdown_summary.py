@@ -65,9 +65,12 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
     final_result += (heading + _get_experiment_results_summary(data, experiment_ids) + figures + gifs)
 
     # -------- HISTORY OF OBJs and BCs
-    final_result += f"### 👀 Training differences in Objs and BCs trained and evaluated on seeds with and without fixed seeds\n\n---\n\n"
-    final_result += _summarise_obj_bcs_history(paths)
+    history_summary = _summarise_obj_bcs_history(paths)
+    if history_summary != "Not possible":
+        final_result += f"### 👀 Training differences in Objs and BCs trained and evaluated on seeds with and without fixed seeds\n\n---\n\n"
+        final_result += history_summary
 
+    # -------- INDIVIDUAL metrics
     # - Define the section's structure
     subsections = [("fixed_tiles_evaluation_summary", "WITH"), ("evaluation_summary", "WITHOUT")]
     subsubsections = ["objective", "playability", "reliability"]
@@ -107,6 +110,8 @@ def _summarise_obj_bcs_history(paths):
 
         # -- Compute the differences
         filepath = os.path.join(path, "objs_bcs_history.csv")
+        if not os.path.exists(filepath):
+            return "Not possible"
         df = pd.read_csv(filepath)
         df[row_names[0]] = abs(df.iloc[:, 0] - df.iloc[:, 3])
         df[row_names[1]] = abs(df.iloc[:, 1] - df.iloc[:, 4])

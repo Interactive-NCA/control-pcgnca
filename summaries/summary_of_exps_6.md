@@ -56,46 +56,6 @@
 
 <br/>
 
-### 👀 Training differences in Objs and BCs trained and evaluated on seeds with and without fixed seeds
-
----
-
-👉 **bc0_diff**
-
-|               |   Experiment 6 |
-|:--------------|---------------:|
-| bc0_diff mean |      0.23128   |
-| bc0_diff min  |      0         |
-| bc0_diff 25%  |      0.0503906 |
-| bc0_diff 50%  |      0.177148  |
-| bc0_diff 75%  |      0.39668   |
-| bc0_diff max  |      0.735156  |
-
-
-👉 **bc1_diff**
-
-|               |   Experiment 6 |
-|:--------------|---------------:|
-| bc1_diff mean |      0.0427867 |
-| bc1_diff min  |      0         |
-| bc1_diff 25%  |      0         |
-| bc1_diff 50%  |      0         |
-| bc1_diff 75%  |      0         |
-| bc1_diff max  |     16         |
-
-
-👉 **obj_diff**
-
-|               |   Experiment 6 |
-|:--------------|---------------:|
-| obj_diff mean |    0.81396     |
-| obj_diff min  |    9.22736e-06 |
-| obj_diff 25%  |    0.174719    |
-| obj_diff 50%  |    0.744117    |
-| obj_diff 75%  |    1.33932     |
-| obj_diff max  |    8.53772     |
-
-
 ### 🎯 Evaluation on seeds WITH Fixed tiles
 
 ---
