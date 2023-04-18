@@ -395,7 +395,8 @@ class Evolver:
                         self.padding_type,
                         obj_weights,
                         to_return,
-                        self.bcs
+                        self.bcs,
+                        self.include_diversity
                 )
                 for model_w in gen_sols[n_launch * self.n_cores: (n_launch+1) * self.n_cores]
             ]

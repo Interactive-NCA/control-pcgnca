@@ -7,13 +7,14 @@ import numpy as np
 
 class ZeldaEvaluation:
 
-    def __init__(self, dim, obj_weights, n_tiles, bcs):
+    def __init__(self, dim, obj_weights, n_tiles, bcs, incl_diversity):
 
         # - User defined attributes
         self.dim = dim
         self.obj_weights = obj_weights
         self.n_tiles = n_tiles
         self.bcs = bcs
+        self.incl_diversity = incl_diversity
 
         # - Should enemies be excluded from playability penalty
         if self.n_tiles > 5:
@@ -28,7 +29,7 @@ class ZeldaEvaluation:
             "n_doors": 1,
             "n_regions": 1,
             "nearest_enemy": (5, 144),
-            "n_enemies": (0, 3)
+            "n_enemies": (2, 5)
         }
 
         # - Define reward weights
@@ -37,9 +38,9 @@ class ZeldaEvaluation:
             "n_keys": 3,
             "n_doors": 3,
             "n_regions": 5,
-            "n_enemies": 5,
+            "n_enemies": 1,
             "nearest_enemy": 2,
-            "path_length": 5
+            "path_length": 1
         }
 
         # - Bounds (TODO: get understanding of this section)
@@ -61,7 +62,7 @@ class ZeldaEvaluation:
                 for k, v in self._reward_weights.items()
         }
     
-    def evaluate_level_batch(self, batch_stats, to_return="optimiser_stats"):
+    def evaluate_level_batch(self, batch_stats, batch_steps_levels, to_return="optimiser_stats"):
 
         # - Reliability
         # -- Get needed stats about bcs
@@ -109,8 +110,24 @@ class ZeldaEvaluation:
         
         final_playability_penalty = -self.obj_weights["playability"]*np.mean(playability_penalties)
 
+        # - Diversity
+        if self.incl_diversity:
+            # -- Select the final produced level for each seed
+            # Note that batch_steps_levels is: n_sols_in_batch x n_steps x dim x dim
+            batch_int_map = batch_steps_levels[:, -1, :, :]
+
+            # -- Compute the diversity bonus
+            diversity_bonus = get_diversity_bonus(batch_int_map, self.dim)
+        else:
+            diversity_bonus = None
+
         # - Objective function calculation
-        objective = final_playability_penalty + final_reliability_penalty
+        # -- Objective function used in the original Earle's paper:
+        # "Illuminating diverse neural cellular automata for level generation"
+        if self.incl_diversity:
+            objective = final_playability_penalty + max(0, final_reliability_penalty + 10*diversity_bonus)
+        else:
+            objective = final_playability_penalty + final_reliability_penalty
 
         # - Return expected output
         # -- Get bcs value
@@ -192,7 +209,7 @@ class ZeldaEvaluation:
         # - Calculate symmetry
         if "symmetry" in self.bcs:
             stats["symmetry"] = get_sym(level, self.dim)
-
+        
         return stats
     
     def _normalise(self, var):
@@ -235,6 +252,24 @@ class ZeldaEvaluation:
 
 # --------------------- Helper functions
 # ------------------------ Public functions
+def get_diversity_bonus(batch_int_map, dim):
+    """
+    For each possible permutation of two of levels in the batch, compute by how many tiles
+    they differ. This yields count for each possible permutation. Then take average of these counts.
+    """
+
+    # - Define batch size
+    batch_size = batch_int_map.shape[0]
+
+    diversity_bonus = np.sum(        [
+            np.sum(batch_int_map[j] != batch_int_map[k]) if j != k else 0
+            for k in range(batch_size)
+            for j in range(batch_size)
+        ]
+    ) / (dim*dim*batch_size * (batch_size - 1))
+
+    return diversity_bonus
+
 def get_sym(int_map, dim):
     """
     Code used from Sam Earle's repository control-pcgrl.

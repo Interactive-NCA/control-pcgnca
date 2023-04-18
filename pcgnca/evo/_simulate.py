@@ -22,10 +22,11 @@ def simulate(
     padding_type,
     obj_weights,
     to_return,
-    bcs
+    bcs,
+    incl_diversity
 ):
     states_copy = np.copy(init_states)
-    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite, padding_type, obj_weights, to_return, bcs)
+    return _simulate(model, states_copy, fixed_tiles, binary_mask, n_tile_types, n_steps, overwrite, padding_type, obj_weights, to_return, bcs, incl_diversity)
 
 def _simulate(
     model,
@@ -38,11 +39,12 @@ def _simulate(
     padding_type,
     obj_weights,
     to_return,
-    bcs
+    bcs,
+    incl_diversity
 ):
 
     # - Initialise the evaluator
-    evaluator = ZeldaEvaluation(init_states.shape[1], obj_weights, n_tile_types, bcs)
+    evaluator = ZeldaEvaluation(init_states.shape[1], obj_weights, n_tile_types, bcs, incl_diversity)
  
     # - Let the model go over each init state for N steps
     # and collect the stats for each level generation
@@ -56,6 +58,12 @@ def _simulate(
         # ---- Rest same as with no fixed tiles (see below)
         if fixed_tiles is not None and binary_mask is not None:
             in_tensor = _preprocess_input(init_states[state_i], n_tile_types, padding_type, fixed_tiles[state_i], binary_mask[state_i], overwrite)
+
+        # --- Only fixed tiles =
+        # ---- if ovewrite is true, ovewrite model's output in the position of fixed tiles if neccessary
+        # ---- Rest same as with no fixed tiles
+        elif fixed_tiles is not None:
+            in_tensor = _preprocess_input(init_states[state_i], n_tile_types, padding_type, fixed_tiles[state_i], None, overwrite)
 
         # --- Only bin mask =
         # ---- Add bin channel
@@ -86,28 +94,27 @@ def _simulate(
             # --- Setup the input for the model again
             if fixed_tiles is not None and binary_mask is not None:
                 in_tensor = _preprocess_input(level, n_tile_types, padding_type, fixed_tiles[state_i], binary_mask[state_i], overwrite)
+            elif fixed_tiles is not None:
+                in_tensor = _preprocess_input(level, n_tile_types, padding_type, fixed_tiles[state_i], None, overwrite)
             elif binary_mask is not None:
-                in_tensor = _preprocess_input(init_states[state_i], n_tile_types, padding_type, None, binary_mask[state_i], overwrite)
+                in_tensor = _preprocess_input(level, n_tile_types, padding_type, None, binary_mask[state_i], overwrite)
             else:
                 in_tensor = _preprocess_input(level, n_tile_types, padding_type)
 
         # -- Reset the auxiliary channels for the next input seed to zero
         model.reset()
 
-        # -- Evaluate the episode accordingly
-        # --- Only generated levels
-        if to_return == "generated_lvls":
-            batch_steps_levels.append(levels)
+        # -- Evaluate the episode accordingly 
         # --- Compute stats about the level (e.g. how many enemies, doors, keys etc.)
-        else: 
-            level_stats = evaluator.get_zelda_level_stats(level)
-            batch_stats.append(level_stats)
+        batch_steps_levels.append(levels)
+        level_stats = evaluator.get_zelda_level_stats(level)
+        batch_stats.append(level_stats)
     
     # - Evaluate the batch accordingly
     if to_return == "generated_lvls":
         return np.array(batch_steps_levels) # n_sols_in_batch x n_steps x dim x dim
     else:
-        return evaluator.evaluate_level_batch(batch_stats, to_return)
+        return evaluator.evaluate_level_batch(batch_stats, np.array(batch_steps_levels), to_return)
 
 def _preprocess_input(seed, n_tile_types, padding_type, fixed=None, bin_mask=None, overwrite=False):
     

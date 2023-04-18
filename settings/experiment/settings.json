@@ -1,6 +1,6 @@
 {
     "experiment_id": 8,
-    "description" : "lukas test",
+    "description" : "Ludek testing whether the diversity works.",
     "game": "zelda",
     "model_name": "NCA",
     "step_size": 0.05,
@@ -16,5 +16,6 @@
     "padding_type": 0,
     "overwrite": true,
     "playability_weight": 1,
-    "reliability_weight": 1
+    "reliability_weight": 1,
+    "include_diversity": true
 }

@@ -29,8 +29,8 @@ class NCA(nn.Module):
 
         # - Define architecture of the network
         self.l1 = Conv2d(self.n_tiles + self.has_binary + self.n_aux, n_hid_1, kernel_size=3, stride=1, padding=0, bias=True)
-        self.l2 = Conv2d(n_hid_1, n_hid_1, 1, 1, 0, bias=True)
-        self.l3 = Conv2d(n_hid_1, self.n_tiles + self.n_aux, 1, 1, 0, bias=True)
+        self.l2 = Conv2d(n_hid_1, n_hid_1, kernel_size=1, stride=1, padding=0, bias=True)
+        self.l3 = Conv2d(n_hid_1, self.n_tiles + self.n_aux, kernel_size=1, stride=1, padding=0, bias=True)
         self.layers = [self.l1, self.l2, self.l3]
         self.last_aux = None
 
