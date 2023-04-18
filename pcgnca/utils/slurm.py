@@ -52,7 +52,7 @@ def get_slurm_file(settings, args):
         result += f"pip install -r requirements.txt\n\n"
 
     # - Run the evolution via cli
-    result += "python3 cli.py "
+    result += "python3 cli.py " + f"--expid {settings['experiment_id']} "
     for k, v in args.items():
         # -- Evaluate if add based on key
         if k == "gen_slurm_script":
