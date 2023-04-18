@@ -45,7 +45,7 @@ def _simulate(
 
     # - Initialise the evaluator
     evaluator = ZeldaEvaluation(init_states.shape[1], obj_weights, n_tile_types, bcs, incl_diversity)
- 
+
     # - Let the model go over each init state for N steps
     # and collect the stats for each level generation
     batch_stats = []
@@ -76,7 +76,6 @@ def _simulate(
         # ---- Convert the numpy array to PyTorch's tensor
         else:
             in_tensor = _preprocess_input(init_states[state_i], n_tile_types, padding_type)
-
         
         # -- Run the forward pass for n_steps
         levels = [] # keeps track of generated levels after each step
@@ -122,9 +121,6 @@ def _preprocess_input(seed, n_tile_types, padding_type, fixed=None, bin_mask=Non
     if overwrite and fixed is not None:
         np.putmask(seed, bin_mask, fixed)
 
-    # --- Pad the binary mask
-    bin_mask = np.pad(bin_mask, 1, mode="constant", constant_values=0)
-
     # --- One hot encode the seed
     seed_encoded = (np.arange(n_tile_types) == seed[..., None]).astype(int)
     seed_encoded = seed_encoded.transpose(2, 0, 1)
@@ -134,6 +130,10 @@ def _preprocess_input(seed, n_tile_types, padding_type, fixed=None, bin_mask=Non
 
     # --- Add binary channel
     if bin_mask is not None:
+        # ---- Pad the binary mask
+        bin_mask = np.pad(bin_mask, 1, mode="constant", constant_values=0)
+
+        # ---- Add it to the encoded seeds
         bin_mask = bin_mask[np.newaxis, ...]
         seed_encoded = np.concatenate((seed_encoded, bin_mask), axis=0)
 

@@ -1,5 +1,5 @@
 {
-    "partition": "brown",
+    "partition": "red,brown",
     "emails": "luci@itu.dk,lukr@itu.dk",
     "username": "lukr",
     "domain": "hpc.itu.dk",

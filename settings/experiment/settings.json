@@ -4,7 +4,6 @@
     "game": "zelda",
     "model_name": "NCA",
     "step_size": 0.05,
-    "fix_seeds": false,
     "n_init_states": 10,
     "n_steps": 50,
     "n_aux_chans": 3,
