@@ -15,7 +15,7 @@ import numpy as np
 # --------------------- Models definition
 class NCA(nn.Module):
 
-    def __init__(self, n_tiles, n_aux_chan=0, bin_chan=False):
+    def __init__(self, n_tiles, n_aux_chan=0, bin_chan=False, aux_chan_op="overwrite"):
 
         # - Initialise the parent (torch nn module)
         super().__init__()
@@ -26,6 +26,7 @@ class NCA(nn.Module):
         self.n_aux = n_aux_chan
         self.n_tiles = n_tiles
         self.has_binary = bin_chan
+        self.aux_chan_op = aux_chan_op
 
         # - Define architecture of the network
         self.l1 = Conv2d(self.n_tiles + self.has_binary + self.n_aux, n_hid_1, kernel_size=3, stride=1, padding=0, bias=True)
@@ -65,18 +66,18 @@ class NCA(nn.Module):
             x = th.relu(x)
             x = self.l2(x)
             x = th.relu(x)
-            x = self.l3(x)
-            x = th.sigmoid(x)
+            before_sigmoid = self.l3(x)
+            x = th.sigmoid(before_sigmoid)
 
-            # - Save the values from the aux channels for the next pass ..
-            # ..and extract the actual output
-            if self._has_aux > 0 or self.has_binary:
+            # - Handle auxiliary channels according to the user specifications
+            if self._has_aux:
+                # -- Overwrite
+                if self.aux_chan_op == "overwrite":
+                    self.last_aux = x[:,-self.n_aux:,:,:]
+                    self.last_aux = F.pad(self.last_aux, (1,1,1,1), mode='constant', value=0)
 
-                # -- Getting the aux channels (the last M channels)
-                self.last_aux = x[:,-self.n_aux:,:,:]
-                self.last_aux = F.pad(self.last_aux, (1,1,1,1), mode='constant', value=0)
-
-                # -- Getting the actual output
+            # - Extract first n_tiles channels if neccessary
+            if self._has_aux or self.has_binary:
                 x = x[:, :self.n_tiles,:,:]
 
         return x

@@ -16,5 +16,6 @@
     "overwrite": true,
     "playability_weight": 1,
     "reliability_weight": 1,
-    "include_diversity": true
+    "include_diversity": true,
+    "aux_chans_opr": "add"
 }
