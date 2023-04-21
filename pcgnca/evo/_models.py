@@ -75,6 +75,10 @@ class NCA(nn.Module):
                 if self.aux_chan_op == "overwrite":
                     self.last_aux = x[:,-self.n_aux:,:,:]
                     self.last_aux = F.pad(self.last_aux, (1,1,1,1), mode='constant', value=0)
+                
+                # -- Add
+                elif self.aux_chan_op == "add":
+                    pass
 
             # - Extract first n_tiles channels if neccessary
             if self._has_aux or self.has_binary:
