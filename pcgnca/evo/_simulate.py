@@ -113,7 +113,7 @@ def _simulate(
     
     # - Evaluate the batch accordingly
     if to_return == "generated_lvls":
-        return np.array(batch_steps_levels, np.array(aux_channels), evaluator.get_zelda_level_stats(level))
+        return np.array(batch_steps_levels), np.array(aux_channels), evaluator.get_zelda_level_stats(level)
     else:
         return evaluator.evaluate_level_batch(batch_stats, np.array(batch_steps_levels), to_return)
 
