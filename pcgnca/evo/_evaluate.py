@@ -125,6 +125,16 @@ class ZeldaEvaluation:
         # -- Objective function used in the original Earle's paper:
         # "Illuminating diverse neural cellular automata for level generation"
         if self.incl_diversity:
+            """
+            print("-"*50)
+            print(f"Diversity bonus: {diversity_bonus}")
+            print(f"Reliability penalty: {final_reliability_penalty}")
+            print(f"Diversity and reliability combined: {max(0, final_reliability_penalty + 10*diversity_bonus)}")
+            print(f"Playbility penalty: {final_playability_penalty}")
+            objective = final_playability_penalty + max(0, final_reliability_penalty + 10*diversity_bonus)
+            print(f"Objective: {objective}")
+            print("-"*50)
+            """
             objective = final_playability_penalty + max(0, final_reliability_penalty + 10*diversity_bonus)
         else:
             objective = final_playability_penalty + final_reliability_penalty

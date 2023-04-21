@@ -79,7 +79,7 @@ class NCA(nn.Module):
                 # -- Getting the actual output
                 x = x[:, :self.n_tiles,:,:]
 
-        return x
+        return x, self.last_aux
 
     def reset(self):
         self.last_aux = None

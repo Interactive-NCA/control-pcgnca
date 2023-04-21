@@ -1,6 +1,6 @@
 {
-    "experiment_id": 9,
-    "description" : "Adjustment of the baseline: padding 1.",
+    "experiment_id": 10,
+    "description" : "Same as baseline except we are not using diversity.",
     "game": "zelda",
     "model_name": "NCA",
     "step_size": 0.05,
@@ -16,5 +16,5 @@
     "overwrite": true,
     "playability_weight": 1,
     "reliability_weight": 1,
-    "include_diversity": true
+    "include_diversity": false
 }

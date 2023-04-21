@@ -79,15 +79,17 @@ def _simulate(
         
         # -- Run the forward pass for n_steps
         levels = [] # keeps track of generated levels after each step
+        aux_channels = []
         for _ in range(n_steps):
 
             # --- Run the single forward pass
-            action = model(in_tensor)
+            action, aux = model(in_tensor)
 
             # --- Extract the level (now 2d int array)
             level = th.argmax(action[0], dim=0).numpy()
 
             # --- Save the levels
+            aux_channels.append(aux.numpy()) # get all aux channels
             levels.append(level)
 
             # --- Setup the input for the model again
@@ -111,7 +113,7 @@ def _simulate(
     
     # - Evaluate the batch accordingly
     if to_return == "generated_lvls":
-        return np.array(batch_steps_levels) # n_sols_in_batch x n_steps x dim x dim
+        return np.array(batch_steps_levels, np.array(aux_channels), evaluator.get_zelda_level_stats(level))
     else:
         return evaluator.evaluate_level_batch(batch_stats, np.array(batch_steps_levels), to_return)
 

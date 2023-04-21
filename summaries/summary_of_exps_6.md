@@ -34,15 +34,15 @@
 
 |                          |   Experiment 6 |
 |:-------------------------|---------------:|
-| N. Solutions             |      81        |
+| N. Solutions             |     103        |
 | N. Solutions Possible    |   10000        |
 | Perc. of Archive Filled  |       1        |
-| Number of generations    |       5        |
-| OBJECTIVE Sum (QD score) |     242.203    |
-| OBJECTIVE Mean           |       2.99016  |
-| OBJECTIVE Std            |       2.25185  |
-| OBJECTIVE Min            |      -0.953753 |
-| OBJECTIVE Max            |       6.51966  |
+| Number of generations    |      46        |
+| OBJECTIVE Sum (QD score) |     593.538    |
+| OBJECTIVE Mean           |       5.76251  |
+| OBJECTIVE Std            |       1.25939  |
+| OBJECTIVE Min            |      -0.303325 |
+| OBJECTIVE Max            |       7.3622   |
 
 |           | Experiment 6                                                      |
 |:----------|:------------------------------------------------------------------|
@@ -64,15 +64,15 @@
 
 |                          |   Experiment 6 |
 |:-------------------------|---------------:|
-| N. Solutions             |       53       |
-| N. Solutions Possible    |    10000       |
-| Perc. of Archive Filled  |        1       |
-| Number of generations    |        5       |
-| OBJECTIVE Sum (QD score) |      165.765   |
-| OBJECTIVE Mean           |        3.12763 |
-| OBJECTIVE Std            |        2.20108 |
-| OBJECTIVE Min            |       -1.01757 |
-| OBJECTIVE Max            |        6.43138 |
+| N. Solutions             |      71        |
+| N. Solutions Possible    |   10000        |
+| Perc. of Archive Filled  |       1        |
+| Number of generations    |      46        |
+| OBJECTIVE Sum (QD score) |     392.233    |
+| OBJECTIVE Mean           |       5.52441  |
+| OBJECTIVE Std            |       1.25267  |
+| OBJECTIVE Min            |       0.794739 |
+| OBJECTIVE Max            |       7.37434  |
 
 |           | Experiment 6                                                                    |
 |:----------|:--------------------------------------------------------------------------------|
@@ -84,15 +84,15 @@
 
 |                            |   Experiment 6 |
 |:---------------------------|---------------:|
-| N. Solutions               |     53         |
+| N. Solutions               |     71         |
 | N. Solutions Possible      |  10000         |
 | Perc. of Archive Filled    |      1         |
-| Number of generations      |      5         |
-| PLAYABILITY Sum (QD score) |    -41.2804    |
-| PLAYABILITY Mean           |     -0.778876  |
-| PLAYABILITY Std            |      0.517766  |
-| PLAYABILITY Min            |     -2.6815    |
-| PLAYABILITY Max            |     -0.0370079 |
+| Number of generations      |     46         |
+| PLAYABILITY Sum (QD score) |    -41.8126    |
+| PLAYABILITY Mean           |     -0.58891   |
+| PLAYABILITY Std            |      0.199201  |
+| PLAYABILITY Min            |     -1.07717   |
+| PLAYABILITY Max            |     -0.0826772 |
 
 |             | Experiment 6                                                                      |
 |:------------|:----------------------------------------------------------------------------------|
@@ -104,15 +104,15 @@
 
 |                            |   Experiment 6 |
 |:---------------------------|---------------:|
-| N. Solutions               |    53          |
-| N. Solutions Possible      | 10000          |
-| Perc. of Archive Filled    |     1          |
-| Number of generations      |     5          |
-| RELIABILITY Sum (QD score) |    -0.983203   |
-| RELIABILITY Mean           |    -0.018551   |
-| RELIABILITY Std            |     0.0119361  |
-| RELIABILITY Min            |    -0.070409   |
-| RELIABILITY Max            |    -0.00259111 |
+| N. Solutions               |      71        |
+| N. Solutions Possible      |   10000        |
+| Perc. of Archive Filled    |       1        |
+| Number of generations      |      46        |
+| RELIABILITY Sum (QD score) |     -10.3677   |
+| RELIABILITY Mean           |      -0.146025 |
+| RELIABILITY Std            |       0.693825 |
+| RELIABILITY Min            |      -5.74654  |
+| RELIABILITY Max            |      -0        |
 
 |             | Experiment 6                                                                      |
 |:------------|:----------------------------------------------------------------------------------|
@@ -128,15 +128,15 @@
 
 |                          |   Experiment 6 |
 |:-------------------------|---------------:|
-| N. Solutions             |      52        |
-| N. Solutions Possible    |   10000        |
-| Perc. of Archive Filled  |       1        |
-| Number of generations    |       5        |
-| OBJECTIVE Sum (QD score) |     168.767    |
-| OBJECTIVE Mean           |       3.24553  |
-| OBJECTIVE Std            |       2.10657  |
-| OBJECTIVE Min            |      -0.684441 |
-| OBJECTIVE Max            |       6.56572  |
+| N. Solutions             |       68       |
+| N. Solutions Possible    |    10000       |
+| Perc. of Archive Filled  |        1       |
+| Number of generations    |       46       |
+| OBJECTIVE Sum (QD score) |      395.54    |
+| OBJECTIVE Mean           |        5.81677 |
+| OBJECTIVE Std            |        1.00886 |
+| OBJECTIVE Min            |        2.98212 |
+| OBJECTIVE Max            |        7.33799 |
 
 |           | Experiment 6                                                        |
 |:----------|:--------------------------------------------------------------------|
@@ -148,15 +148,15 @@
 
 |                            |   Experiment 6 |
 |:---------------------------|---------------:|
-| N. Solutions               |     52         |
-| N. Solutions Possible      |  10000         |
-| Perc. of Archive Filled    |      1         |
-| Number of generations      |      5         |
-| PLAYABILITY Sum (QD score) |    -39.4673    |
-| PLAYABILITY Mean           |     -0.758987  |
-| PLAYABILITY Std            |      0.431572  |
-| PLAYABILITY Min            |     -1.64843   |
-| PLAYABILITY Max            |     -0.0401575 |
+| N. Solutions               |      68        |
+| N. Solutions Possible      |   10000        |
+| Perc. of Archive Filled    |       1        |
+| Number of generations      |      46        |
+| PLAYABILITY Sum (QD score) |     -40.737    |
+| PLAYABILITY Mean           |      -0.599073 |
+| PLAYABILITY Std            |       0.232073 |
+| PLAYABILITY Min            |      -1.39909  |
+| PLAYABILITY Max            |      -0.243788 |
 
 |             | Experiment 6                                                          |
 |:------------|:----------------------------------------------------------------------|
@@ -168,15 +168,15 @@
 
 |                            |   Experiment 6 |
 |:---------------------------|---------------:|
-| N. Solutions               |    52          |
-| N. Solutions Possible      | 10000          |
-| Perc. of Archive Filled    |     1          |
-| Number of generations      |     5          |
-| RELIABILITY Sum (QD score) |    -0.955343   |
-| RELIABILITY Mean           |    -0.018372   |
-| RELIABILITY Std            |     0.0123935  |
-| RELIABILITY Min            |    -0.0660145  |
-| RELIABILITY Max            |    -0.00292317 |
+| N. Solutions               |     68         |
+| N. Solutions Possible      |  10000         |
+| Perc. of Archive Filled    |      1         |
+| Number of generations      |     46         |
+| RELIABILITY Sum (QD score) |     -2.54617   |
+| RELIABILITY Mean           |     -0.0374437 |
+| RELIABILITY Std            |      0.0222722 |
+| RELIABILITY Min            |     -0.101168  |
+| RELIABILITY Max            |     -0         |
 
 |             | Experiment 6                                                          |
 |:------------|:----------------------------------------------------------------------|
