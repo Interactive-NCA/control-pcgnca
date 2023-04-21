@@ -121,8 +121,8 @@ def _simulate(
 def _preprocess_input(seed, n_tile_types, padding_type, fixed=None, bin_mask=None, overwrite=False):
     
     # --- Overwrite = Make sure that model always receive the fixed tiles
-    if overwrite and fixed is not None:
-        np.putmask(seed, bin_mask, fixed)
+    if overwrite and fixed is not None:  
+        np.putmask(seed, (fixed > 0).astype(int), fixed)
 
     # --- One hot encode the seed
     seed_encoded = (np.arange(n_tile_types) == seed[..., None]).astype(int)
