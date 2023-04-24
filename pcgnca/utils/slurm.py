@@ -37,7 +37,7 @@ def get_slurm_file(settings, args):
         result += f"#SBATCH --mail-user={settings['emails']}\n"
         result += f"#SBATCH --mail-type=BEGIN,FAIL,END\n"
     # -- Students account
-    result += "#SBATCH —-account=students\n"
+    result += "#SBATCH --account=students\n"
     # -- Any nodes to be excluded?
     if settings.get("exclude_nodes"):
         result += f"#SBATCH --exclude {settings['exclude_nodes']}\n"
