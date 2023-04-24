@@ -8,12 +8,6 @@ on the cluster.
 # --------------------- External libraries imports
 import os
 
-"""
-# Train:
-# Existing: python3 cli.py --train --expid 3 --n_cores 80 --time "48:00:00" --envname "pcgnca" --save_freq 5 --n_generations 20
-# From setting folder: python3 cli.py --train --n_cores 80 --time "48:00:00" --envname "pcgnca" --save_freq 5 --n_generations 20
-"""
-
 # --------------------- Public functions
 def get_slurm_file(settings, args):
 

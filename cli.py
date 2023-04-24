@@ -9,7 +9,7 @@ import os
 # ------- Internal library imports
 from pcgnca.utils import get_settings, get_evolver, generate_fixed_tiles, \
 get_experiments_summary, from_experimentid_to_evolver, get_slurm_file, from_experimentid_to_settings, \
-transfer_exp_folder
+transfer_exp_folder, subsample 
 
 # ------- Global vars definition
 SETTINGS_LOAD_PATH = "settings"
@@ -30,6 +30,7 @@ parser.add_argument('--summarise', action='store', type=str)
 parser.add_argument('--file-transfer', action='store_true', default=False)
 parser.add_argument('--gen-slurm-script', action='store_true', default=False)
 parser.add_argument('--gen-fixed-seeds', action='store_true', default=False)
+parser.add_argument('--subsample', action='store_true', default=False)
 
 # --- Hyper-parameters for activities
 # ---- For file transfer between server and local
@@ -51,6 +52,9 @@ parser.add_argument('--files_exclude', action='store', type=str, default=None)
 parser.add_argument('--fixedgen-game', action='store')
 parser.add_argument('--fixedgen-nseeds', action='store', type=int)
 parser.add_argument('--fixedgen-difficulty', action='store')
+
+# ---- For subsampling of the archive
+parser.add_argument('--n_models', action='store', type=int)
 
 # -- Parse the arguments
 args = parser.parse_args()
@@ -90,6 +94,10 @@ def run_gen_slurm_file_assertions():
     if args.evaluate:
         run_evaluation_assertions()
 
+def run_subsample_assertions():
+    assert args.n_models is not None and args.n_models > 30, "At least 30 models must be in the subsampled archive."
+    assert args.expid is not None, "You must specify which experiment's archive you want to subsample via --expid flag."
+
 def load_evolver():
 
     # - Assertions
@@ -122,6 +130,17 @@ def load_evolver():
 
 # ------- Execution based on flags
 def main():
+
+    # SUBSAMPLING of the archive
+    if args.subsample:
+        # - Run assertions
+        run_subsample_assertions()
+
+        # - Load settings
+        settings = from_experimentid_to_settings(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH, args.expid, vars(args))
+
+        # - Run the subsample script
+        subsample(settings, args.n_models)
 
     # TRANSFERING FILES
     # - Server to local

@@ -54,3 +54,10 @@ python3 cli.py --file-transfer --save_where "test/" --expid 2 --files_exclude "e
 
 #### From local to server
 python3 cli.py --file-transfer --save_where "test/" --expid 2 --files_exclude "evolver.pkl"
+
+### Archive subsampling
+For production purposes, you may want to use smaller archive, this can be done via subsampling:
+
+```bash
+python3 cli.py --subsample --expid 15 --n_models 100
+```
