@@ -35,16 +35,21 @@ def get_slurm_file(settings, args):
     # -- Should someone be informed by email about certain events
     if settings.get("emails"): 
         result += f"#SBATCH --mail-user={settings['emails']}\n"
-        result += f"#SBATCH --mail-type=BEGIN,FAIL,END\n\n"
-    
+        result += f"#SBATCH --mail-type=BEGIN,FAIL,END\n"
+    # -- Students account
+    result += "#SBATCH —-account=students\n"
+    # -- Any nodes to be excluded?
+    if settings.get("exclude_nodes"):
+        result += f"#SBATCH --exclude {settings['exclude_nodes']}\n"
+ 
     # - Show on which node is the code running
-    result += 'echo "Running on $(hostname)"\n\n'
+    result += '\necho "Running on $(hostname)"\n\n'
 
     # - Setup the environment
     # -- Activate it
     result += "module load Anaconda3\n"
     result += f"source {settings['bashrc_path']}\n"
-    result += f"source activate {settings['envname']}\n\n"
+    result += f"conda activate {settings['envname']}\n\n"
 
     # - Install packages if needed
     if settings["install_req"]:
@@ -52,7 +57,7 @@ def get_slurm_file(settings, args):
         result += f"pip install -r requirements.txt\n\n"
 
     # - Run the evolution via cli
-    result += "python3 cli.py " + f"--expid {settings['experiment_id']} "
+    result += f"python{settings['python_version']} cli.py " + f"--expid {settings['experiment_id']} "
     for k, v in args.items():
         # -- Evaluate if add based on key
         if k == "gen_slurm_script":
