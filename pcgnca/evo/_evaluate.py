@@ -172,7 +172,7 @@ class ZeldaEvaluation:
             stats["n_enemies"] = stats["n_bats"] + stats["n_spiders"] + stats["n_scorpions"]
 
         # - Calculate number of the regions
-        tiles_loc = get_tile_locations(level, [i for i in range(self.n_tiles)])
+        tiles_loc = get_tile_locations(level, [i for i in range(8)])
         stats["n_regions"] = calc_num_regions(level, tiles_loc, [i for i in range(self.n_tiles) if i != 1])
 
         # - Calculate distance from nearest enemy and solution path length (if possible)
