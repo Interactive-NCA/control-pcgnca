@@ -95,11 +95,12 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
         # Overview of generators 
         generators = {
             "easy": self._easy_generator,
-            "medium": self._medium_generator,
-            "hard": self._hard_generator
+            "all_special_random": self._special_random,
+            "two_special_random": self._special_random,
+            "one_special_random": self._special_random
         }
 
-        assert self.difficulty in generators, "The difficulty must be one of easy, medium, hard."
+        assert self.difficulty in generators, "The specified difficulty was not found."
 
         return generators[self.difficulty]
 
@@ -176,12 +177,59 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
 
         return result
 
-    def _medium_generator(self):
-        pass
+    def _special_random(self, n_seeds):
+        """
+        Generates special tiles (zelda, key, door) randomly such that
+        they do not appear in direct neighborhood of each other. In addition,
+        it is ensured that the tiles are not put right next to the boundaries
 
-    def _hard_generator(self):
-        pass
+        In addition, depending on the difficulty, it may generate all of the
+        special tiles or just subset.
+        """
 
+        # - Define result as 3 array where the 3 dimension refers to batch size
+        result = np.zeros((n_seeds, self.grid_dim, self.grid_dim))
+        for i in tqdm(range(n_seeds)):
+
+            # -- Determine which of the special tiles should be placed in the grid
+            if self.difficulty == "all_special_random":
+                tiles_to_place = [2, 3, 4] # zelda, key, door
+            elif self.difficulty == "two_special_random":
+                tiles_to_place = set()
+                while len(tiles_to_place) < 2:
+                    tiles_to_place.add(randint(2,4))
+                tiles_to_place = list(tiles_to_place)
+            elif self.difficulty == "one_special_random":
+                tiles_to_place = set()
+                while len(tiles_to_place) < 1:
+                    tiles_to_place.add(randint(2,4))
+                tiles_to_place = list(tiles_to_place)
+            
+            # -- Add stoping value
+            tiles_to_place = tiles_to_place + [-1]
+            
+            # -- Place the in the grid and save it to the result (inplace)
+            self._place_tiles_random(result, i, tiles_to_place)
+
+        return result
+    
+    def _place_tiles_random(self, result, i, tiles_to_place):
+        
+        curr = tiles_to_place.pop(0)
+        while curr > 0:
+
+            # --- Generate coordinates to place the curr tile at
+            x, y = randint(0, self.grid_dim - 1), randint(0, self.grid_dim - 1)
+
+            # --- Check there are no other tiles in its neighborhood as well the tile is not right next to border
+            left_b, right_b = max(0, x - 1), min(self.grid_dim, x + 2)
+            bottom_b, top_b = max(0, y - 1), min(self.grid_dim, y + 2)
+            is_in_allowed_range = (0 < x < self.grid_dim - 1) and (0 < y < self.grid_dim - 1)
+            if result[i, left_b:right_b, bottom_b:top_b].sum() == 0 and is_in_allowed_range:
+
+                # ---- And if not, then place the tile there
+                result[i, x, y] = curr
+                curr = tiles_to_place.pop(0)
 
 # --------------------- Helper functions
 # ------------------------ Public
