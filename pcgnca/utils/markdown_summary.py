@@ -22,7 +22,7 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path):
     all_experiments = os.listdir(experiments_path)
     for exp_filename in all_experiments:
         for expid in experiment_ids:
-            if f"ExperimentId-{expid}" in exp_filename:
+            if f"ExperimentId-{expid}"  == exp_filename.split(os.sep)[-1]:
                 path = os.path.join(experiments_path, exp_filename)
                 paths.append((expid, path,))
                 break
@@ -164,7 +164,7 @@ def _add_figures(exp_paths, figure_paths, expids):
         data[row_name] = row
     
     # - Convert the df to markdown
-    columns = [f"Experiment {i}" for i in expids]  
+    columns = [f"Experiment {i}" for i in expids]
     result = pd.DataFrame.from_dict(data, orient='index', columns=columns).to_markdown()
 
     return result + "\n\n<br/>\n\n"

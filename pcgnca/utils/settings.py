@@ -72,7 +72,7 @@ def _find_path_to_experiment(experiments_path, expid):
     path = None
     all_experiments = os.listdir(experiments_path)
     for exp_filename in all_experiments:
-        if f"ExperimentId-{expid}" in exp_filename:
+        if f"ExperimentId-{expid}"  == exp_filename.split(os.sep)[-1]:
             path = os.path.join(experiments_path, exp_filename)
             break
     return path
