@@ -195,7 +195,7 @@ class ZeldaEvaluation:
 
                 # --- Compute shortest path from the zelda to each enemy and then find the min distance
                 if len(enemies) > 0:
-                    dijkstra,_ = run_dijkstra(p_x, p_y, level, self.all_passable_except_wall_door)
+                    dijkstra,_ = run_dijkstra(p_x, p_y, level, self.all_passable_except_wall)
                     min_dist = self.dim*self.dim
                     for e_x,e_y in enemies:
                         if dijkstra[e_y][e_x] > 0 and dijkstra[e_y][e_x] < min_dist:
@@ -214,7 +214,7 @@ class ZeldaEvaluation:
                 d_x, d_y = tiles_loc[4][0]
 
                 # start point is zelda
-                dijkstra_k, _ = run_dijkstra(p_x, p_y, level, self.all_passable_except_wall_door)
+                dijkstra_k, _ = run_dijkstra(p_x, p_y, level, self.all_passable_except_wall)
                 stats["path_length"] += dijkstra_k[k_y][k_x]
 
                 # start point is key
