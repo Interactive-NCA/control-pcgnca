@@ -32,6 +32,11 @@ class ZeldaEvaluation:
             "n_enemies": (2, 5)
         }
 
+        # - Passable values for different computations
+        self.all_passable = [i for i in range(8)]
+        self.all_passable_except_wall = [i for i in range(8) if i != 1]
+        self.all_passable_except_wall_door = [i for i in range(8) if i not in [1, 4]]
+
         # - Define reward weights
         self._reward_weights = {
             "n_players": 3,
@@ -172,8 +177,8 @@ class ZeldaEvaluation:
             stats["n_enemies"] = stats["n_bats"] + stats["n_spiders"] + stats["n_scorpions"]
 
         # - Calculate number of the regions
-        tiles_loc = get_tile_locations(level, [i for i in range(8)])
-        stats["n_regions"] = calc_num_regions(level, tiles_loc, [i for i in range(self.n_tiles) if i != 1])
+        tiles_loc = get_tile_locations(level, self.all_passable)
+        stats["n_regions"] = calc_num_regions(level, tiles_loc, self.all_passable_except_wall)
 
         # - Calculate distance from nearest enemy and solution path length (if possible)
         if stats["n_players"] == 1 and stats["n_regions"] == 1:
@@ -190,7 +195,7 @@ class ZeldaEvaluation:
 
                 # --- Compute shortest path from the zelda to each enemy and then find the min distance
                 if len(enemies) > 0:
-                    dijkstra,_ = run_dijkstra(p_x, p_y, level, [i for i in range(self.n_tiles) if i not in [1, 4]])
+                    dijkstra,_ = run_dijkstra(p_x, p_y, level, self.all_passable_except_wall_door)
                     min_dist = self.dim*self.dim
                     for e_x,e_y in enemies:
                         if dijkstra[e_y][e_x] > 0 and dijkstra[e_y][e_x] < min_dist:
@@ -209,12 +214,15 @@ class ZeldaEvaluation:
                 d_x, d_y = tiles_loc[4][0]
 
                 # start point is zelda
-                dijkstra_k, _ = run_dijkstra(p_x, p_y, level, [i for i in range(self.n_tiles) if i not in [1, 4]])
+                dijkstra_k, _ = run_dijkstra(p_x, p_y, level, self.all_passable_except_wall_door)
                 stats["path_length"] += dijkstra_k[k_y][k_x]
 
                 # start point is key
-                dijkstra_d,_ = run_dijkstra(k_x, k_y, level, [i for i in range(self.n_tiles) if i != 1])
+                dijkstra_d,_ = run_dijkstra(k_x, k_y, level, self.all_passable_except_wall)
                 stats["path_length"] += dijkstra_d[d_y][d_x]
+
+                # assert that the path length must be greater than zero
+                assert stats["path_length"] > 0, "Path lenght must be positive!"
 
         # - Calculate symmetry
         if "symmetry" in self.bcs:
