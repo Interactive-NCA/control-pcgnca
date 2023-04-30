@@ -140,7 +140,7 @@ class Evolver:
 
         # -- Create the new folder with the fresh content
         self.logger.working_on("Summarising trained archive ...")
-        self._compute_archive_stats(self.gen_archive, "training_summary", "objective")
+        self._compute_archive_stats(self.result_archive, "training_summary", "objective")
 
         # - Summarise results for seeds with and without fixed tiles
         self._compute_archive_stats_on_unseen_seeds()
@@ -206,7 +206,7 @@ class Evolver:
         # INITIAL setup
         # -------------------- 
         # - Retrieve solutions from the archive as pandas df
-        solutions = self.gen_archive.as_pandas()
+        solutions = self.result_archive.as_pandas()
         model_weights = np.array(solutions.loc[:, "solution_0":])
 
         # - Get setup of the evolver before going through evaluation
@@ -489,20 +489,34 @@ class Evolver:
         self.gen_model = self._from_name_to_model(self.model_name)
 
     def _init_pyribs(self):
+        """Use CMA-MAE QD algorithm as described here:
+        https://docs.pyribs.org/en/stable/tutorials/cma_mae.html
+        """
         # - Get initial random weights of the model
         initial_w = get_init_weights(self.gen_model)
 
-        # - Define archive
+        # - Define archives
+        # -- Training archive (used by emmiters)
         self.gen_archive = GridArchive(
+            solution_dim=len(initial_w),
+            dims=[v for v in self.n_models_per_bc],
+            ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))],
+            learning_rate=0.01, # 0 = CMA-ES vs 1 = CMA-ME
+            threshold_min=0, # No matter the objective, any solution should pass
+            qd_score_offset=-100
+        )
+
+        # -- Result archive (only best solution are stored)
+        self.result_archive = GridArchive(
             solution_dim=len(initial_w),
             dims=[v for v in self.n_models_per_bc],
             ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
         )
 
         # - Define emmiters
-        # -- First, define hyper-parameters of the emmitter
-        n_emitters, batch_size, ranker = 5, 30, "2imp"
-
+        # -- First, define hyper-parameters of the emmitter according to CMA-MAE
+        n_emitters, batch_size, ranker, selection_rule, restart_rule = 5, 30, "imp", "mu", "basic"
+        
         # -- Finally, initialize the emitters
         gen_emitters = [
             EvolutionStrategyEmitter(
@@ -511,12 +525,14 @@ class Evolver:
                 sigma0=self.step_size,
                 ranker=ranker,
                 batch_size=batch_size,
+                selection_rule=selection_rule,
+                restart_rule=restart_rule
             )
             for _ in range(n_emitters)
         ]
 
         # - Define scheduler using the archive and emitters
-        self.scheduler = Scheduler(self.gen_archive, gen_emitters)
+        self.scheduler = Scheduler(self.gen_archive, gen_emitters, result_archive=self.result_archive)
 
     def _init(self, **settings):
         # -- Save the settings dict for later reference
@@ -543,7 +559,7 @@ class Evolver:
     def _save(self):
 
         # - Save the archive as csv
-        df = self.gen_archive.as_pandas(include_metadata=True)
+        df = self.result_archive.as_pandas(include_metadata=True)
         df.to_csv(os.path.join(self.save_path, "trained_archive.csv"))
 
         # - Save the heatmap of the archive
@@ -555,7 +571,7 @@ class Evolver:
         # -- Get the figure and save it
         n_gens = self.completed_generations if self.completed_generations else 0 
         title = f"After {n_gens} generations"
-        fig = self._get_archive_heatmap(title, self.gen_archive)
+        fig = self._get_archive_heatmap(title, self.result_archive)
         fig.savefig(os.path.join(archive_snaps_path, f"ngens_{n_gens}.png")) 
 
         # - Save the evolver 
