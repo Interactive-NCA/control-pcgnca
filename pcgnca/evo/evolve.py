@@ -502,7 +502,7 @@ class Evolver:
             dims=[v for v in self.n_models_per_bc],
             ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))],
             learning_rate=0.01, # 0 = CMA-ES vs 1 = CMA-ME
-            threshold_min=0, # No matter the objective, any solution should pass
+            threshold_min=-1, # No matter the objective, any solution should pass
             qd_score_offset=-100
         )
 
