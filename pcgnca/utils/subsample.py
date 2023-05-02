@@ -6,7 +6,7 @@ import pickle
 import os
 
 # --------------------- Public functions
-def subsample(settings, n_models, method="basic", k=30):
+def subsample(settings, n_models, method="basic", k=100):
     """Subsample trained archive along with the training seeds.
     """
 
@@ -59,9 +59,12 @@ def _subsample_archive_k_means(folder_path, n_models, k):
     # Sort the subsample by "objective" column in descending order
     df_subsample = df_subsample.sort_values("objective", ascending=False)
 
+    # - Filter
+    df_filter = df_subsample[df_subsample["measure_1"] > 0] # Solution path length > 0
+
     # Save the new DataFrame to a CSV file in the same folder
     save_path = os.path.join(folder_path, "trained_archive_subsampled.csv")
-    df_subsample.to_csv(save_path, index=False)
+    df_filter.to_csv(save_path, index=False)
 
 def _subsample_archive(folder_path, n_models):
     """
@@ -110,6 +113,15 @@ def _subsample_training_seeds(folder_path):
     # - Subsample the training seeds
     generations = df["metadata"].unique()
     subsampled_seeds = {k: v for k, v in train_seeds.items() if k in generations}
+
+    subsampled_seeds = {}
+    for k, v in train_seeds.items():
+        if k in generations:
+            subsampled_v = {}
+            subsampled_v['binary_mask'] = v['binary_mask'][:10]
+            subsampled_v['init_states'] = v['init_states'][:10]
+            subsampled_v['fixed_states'] = v['fixed_states'][:10]
+            subsampled_seeds[k] = subsampled_v
 
     # Save the new training seeds to a pickle file
     training_seeds_path_subsample = os.path.join(folder_path, "training_seeds_subsampled.pkl")
