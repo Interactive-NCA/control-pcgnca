@@ -57,6 +57,8 @@ parser.add_argument('--fixedgen-difficulty', action='store')
 # ---- For evaluation
 parser.add_argument('--fxd_til', action='store', type=str)
 parser.add_argument('--fxd_til_size', action='store', type=int)
+parser.add_argument('--n_evals', action='store', type=int)
+parser.add_argument('--eval_batch_size', action='store', type=int)
 
 # ---- For subsampling of the archive
 parser.add_argument('--n_models', action='store', type=int)
@@ -84,6 +86,8 @@ def run_evaluation_assertions():
     assert args.expid is not None, "You specify which experiment you want to evalaute via --expid"
     assert args.fxd_til is not None, "You must specify the type of fixed tiles, e.g. manual."
     assert args.fxd_til_size is not None and args.fxd_til_size > 0, "You must specify how large should be the archive with fixed tiles."
+    assert args.n_evals is not None and args.n_evals > 0, "You must specify number of evaluations of the given experiment."
+    assert args.eval_batch_size is not None and args.eval_batch_size >= 10, "You must specify size of evaluation batch size and it has to be at least 10."
 
 def run_gen_fixed_tiles_assertions():
     assert args.fixedgen_game is not None, "Must specify for which game you want to generate fixed tiles."
@@ -215,7 +219,9 @@ def main():
                                  GRAPHICS_PATH, 
                                  generate_fixed_tiles, 
                                  args.fxd_til, 
-                                 args.fxd_til_size)
+                                 args.fxd_til_size,
+                                 args.n_evals,
+                                 args.eval_batch_size)
     
     # MARKDOWN summary and comparison of different experiments
     if args.summarise:

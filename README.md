@@ -35,7 +35,7 @@ python3 cli.py --train --expid 3 --n_cores 8 --n_generations 50 --save_freq 5
 Example command:
 
 ```
-python3 cli.py --evaluate --expid 1 --n_cores 8
+python3 cli.py --evaluate --expid 15 --n_cores 8 --fxd_til "easy" --fxd_til_size 1000 --n_evals 10 --eval_batch_size 10
 ```
 
 ### Summarising evaluation
