@@ -179,6 +179,7 @@ class Evolver:
         # - If the given experiment has not been evaluated yet, then create its folder and
         # fill it with the common stuff
         exp_folder_path = os.path.join(eval_folder_path, f"ExperimentId-{self.experiment_id}")
+        train_dir_path = os.path.join(exp_folder_path, "training_summary")
         if not os.path.exists(exp_folder_path):
 
             # - Prepare the new directory
@@ -200,8 +201,13 @@ class Evolver:
     
             # -- Add training summary
             self.logger.working_on("Summarising trained archive ...")
-            dir_path = os.path.join(exp_folder_path, "training_summary")
-            self._compute_archive_stats(self.gen_archive, dir_path, "objective")
+            self._compute_archive_stats(self.gen_archive, train_dir_path, "objective", None)
+
+        # - Get the perc of archive filled during training
+        with open(os.path.join(train_dir_path, "objective_stats.json")) as f:
+            sts = json.load(f)
+            tr_arch_perc = sts["Perc. of Archive Filled"]
+
 
         # - Create folder for the requested evalutation
         # -- Define the path
@@ -223,7 +229,7 @@ class Evolver:
         os.makedirs(n_eval_b_size_fold_path)
 
         # - Summarise results for seeds with and without fixed tiles
-        self._compute_archive_stats_on_unseen_seeds(fixed_tile_type, fixed_tile_arch_size, seeds, n_eval_b_size_fold_path)
+        self._compute_archive_stats_on_unseen_seeds(fixed_tile_type, fixed_tile_arch_size, seeds, n_eval_b_size_fold_path, tr_arch_perc)
 
         # - Erase the copy of the given experiment folder if neccessary
         if was_evaluated_before:
@@ -285,7 +291,7 @@ class Evolver:
         # - Save
         df.to_csv(path, index=False)
 
-    def _compute_archive_stats_on_unseen_seeds(self, fxd_tiles_diff, fxd_tiles_arch_size, seeds, save_path):
+    def _compute_archive_stats_on_unseen_seeds(self, fxd_tiles_diff, fxd_tiles_arch_size, seeds, save_path, tr_arch_perc):
 
         # INITIAL setup
         # -------------------- 
@@ -324,7 +330,7 @@ class Evolver:
                 df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
                         
             # -- Evalute the df and save the results
-            self._compute_eval_archive_stats(df, model_weights, fixed_seeds=True, save_path=save_to)
+            self._compute_eval_archive_stats(df, model_weights, fixed_seeds=True, save_path=save_to, tr_arch_perc=tr_arch_perc)
 
             # -- Save the df with the stats
             fname = os.path.join(save_to, "fixed_tiles_evaluation_summary", "models_stats.csv")
@@ -348,7 +354,7 @@ class Evolver:
                 df = self._get_gen_sols_stats(model_weights, init_states, None, None, "extended_stats")
 
             # -- Evalute the df and save the results
-            self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False, save_path=save_to)
+            self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False, save_path=save_to, tr_arch_perc=tr_arch_perc)
 
             # -- Save the df with the stats
             fname = os.path.join(save_to, "evaluation_summary", "models_stats.csv")
@@ -362,7 +368,7 @@ class Evolver:
             # --------------------
             i += 1
 
-    def _compute_eval_archive_stats(self, df, weights, fixed_seeds, save_path):
+    def _compute_eval_archive_stats(self, df, weights, fixed_seeds, save_path, tr_arch_perc):
 
         # - Define criteria of the archive to evaluate
         criterias = ["objective", "playability", "reliability"]
@@ -386,22 +392,29 @@ class Evolver:
             archive.add(weights, df[criteria].to_numpy(), df[self.bcs].to_numpy())
 
             # -- Finally evalutate the archive
-            self._compute_archive_stats(archive, dir_path, criteria)
+            self._compute_archive_stats(archive, dir_path, criteria, tr_arch_perc)
 
-    def _compute_archive_stats(self, archive, dir_path, filename):
+    def _compute_archive_stats(self, archive, dir_path, filename, tr_arch_perc):
 
         # - Get the archive as df
         df = archive.as_pandas()
 
         # - Compute the summary
+        # -- Core stats
         max_n_solutions = self.n_models_per_bc[0]*self.n_models_per_bc[1]
         stats = {
             filename : self._get_metric_summary(df["objective"]),
-            "N. Solutions" : len(df),
-            "N. Solutions Possible": max_n_solutions,
-            "Perc. of Archive Filled": 100*round(len(df)/(max_n_solutions), 2),
-            "Number of generations": self.completed_generations
+            "Perc. of Archive Filled": 100*round(len(df)/(max_n_solutions), 2)
         }
+
+        # -- Optional
+        # --- Number of generations (only in training summary)
+        if tr_arch_perc is None:
+            stats["Number of generations"] = self.completed_generations
+
+        # --- Drop in terms of archive filled train to eval
+        if tr_arch_perc is not None:
+            stats["Number of perc. points drop (arch. fill.)"] = tr_arch_perc - stats["Perc. of Archive Filled"]
 
         # - Save the summary along with the csv version of the archive
         # -- Make directory
