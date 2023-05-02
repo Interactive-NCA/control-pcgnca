@@ -17,6 +17,7 @@ EXPERIMENT_SAVE_PATH = "experiments"
 GRAPHICS_PATH = os.path.join("assets", "games")
 SUMMARIES_PATH = "summaries"
 TRANSFER_PATH = "fortransfer"
+EVAL_FOLDER_PATH = "evaluations"
 
 # ------- CLI arguments definition
 parser = argparse.ArgumentParser(
@@ -209,7 +210,12 @@ def main():
 
     # - Eval
     if args.evaluate:
-        evolver.evaluate_archive(args.fxd_til, args.fxd_til_size)
+        evolver.evaluate_archive(EVAL_FOLDER_PATH, 
+                                 SETTINGS_LOAD_PATH, 
+                                 GRAPHICS_PATH, 
+                                 generate_fixed_tiles, 
+                                 args.fxd_til, 
+                                 args.fxd_til_size)
     
     # MARKDOWN summary and comparison of different experiments
     if args.summarise:
