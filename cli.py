@@ -53,6 +53,10 @@ parser.add_argument('--fixedgen-game', action='store')
 parser.add_argument('--fixedgen-nseeds', action='store', type=int)
 parser.add_argument('--fixedgen-difficulty', action='store')
 
+# ---- For evaluation
+parser.add_argument('--fxd_til', action='store', type=str)
+parser.add_argument('--fxd_til_size', action='store', type=int)
+
 # ---- For subsampling of the archive
 parser.add_argument('--n_models', action='store', type=int)
 
@@ -75,6 +79,8 @@ def run_training_assertions():
 def run_evaluation_assertions():
     assert args.n_cores is not None, "You must specify --n_cores flag denoting how many cpu cores should be used"
     assert args.expid is not None, "You specify which experiment you want to evalaute via --expid"
+    assert args.fxd_til is not None, "You must specify the type of fixed tiles, e.g. manual."
+    assert args.fxd_til_size is not None and args.fxd_til_size > 0, "You must specify how large should be the archive with fixed tiles."
 
 def run_gen_fixed_tiles_assertions():
     assert args.fixedgen_game is not None, "Must specify for which game you want to generate fixed tiles."
@@ -200,7 +206,7 @@ def main():
 
     # - Eval
     if args.evaluate:
-        evolver.evaluate_archive()
+        evolver.evaluate_archive(args.fxd_til, args.fxd_til_size)
     
     # MARKDOWN summary and comparison of different experiments
     if args.summarise:

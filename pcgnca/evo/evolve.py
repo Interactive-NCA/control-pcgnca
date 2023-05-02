@@ -47,7 +47,10 @@ class Evolver:
         self._init_pyribs()
 
         # - Load the fixed tiles if neccesary
-        self._load_fixed_tiles_arch()
+        if self.fixed_tiles:
+            self._load_fixed_tiles_arch()
+        else:
+            self.fixed_tiles_arch = None
 
 
     # --------------------- Public functions
@@ -126,7 +129,7 @@ class Evolver:
                 # Save the evolver 
                 self._save()
 
-    def evaluate_archive(self):
+    def evaluate_archive(self, fixed_tile_type, fixed_tile_arch_size):
         
         # - Section intro
         self.logger.section_start(":mage: Evaluation of the trained archive")
@@ -143,7 +146,7 @@ class Evolver:
         self._compute_archive_stats(self.gen_archive, "training_summary", "objective")
 
         # - Summarise results for seeds with and without fixed tiles
-        self._compute_archive_stats_on_unseen_seeds()
+        self._compute_archive_stats_on_unseen_seeds(fixed_tile_type, fixed_tile_arch_size)
 
     # --------------------- Private functions (not exposed to cli)
     def _get_training_seed_batch_to_add(self, arrs):        
@@ -201,7 +204,7 @@ class Evolver:
         # - Save
         df.to_csv(path, index=False)
 
-    def _compute_archive_stats_on_unseen_seeds(self):
+    def _compute_archive_stats_on_unseen_seeds(self, fxd_tiles_diff, fxd_tiles_arch_size):
 
         # INITIAL setup
         # -------------------- 
@@ -212,16 +215,19 @@ class Evolver:
         # - Get setup of the evolver before going through evaluation
         # This to ensure that the state of evolve before and after evalution is the same
         fixed_tiles_archive = self.fixed_tiles_arch
+        old_fxd_til_diff, old_fxd_til_arch_size = self.fixed_tiles_difficulty, self.fixed_tiles_archive_size
         overwrite = self.overwrite
 
         # FIXED tiles eval
         # --------------------
-        self.logger.working_on("Summarising performance of trained archive on NEW seeds with FIXED TILES ...")
+        self.logger.working_on(f"Summarising performance of trained archive on NEW seeds with FIXED TILES ({fxd_tiles_diff}, {fxd_tiles_arch_size}) ...")
+        # - Set the fixed tiles difficulty and archive size
+        self.fixed_tiles_difficulty, self.fixed_tiles_archive_size = fxd_tiles_diff, fxd_tiles_arch_size
+        # - Load the fixed tiles with given settings
+        self._load_fixed_tiles_arch() # it is now available under self.fixed_tiles_arch
         # - Assertions of assumptions
-        # -- Make sure that fixed tiles archive is loaded --> this is to ensure that _get_latent_seeds generates also fixed states (tiles)
-        if self.fixed_tiles_arch is None:
-            self._load_fixed_tiles_arch() # it is now available under self.fixed_tiles_arch
-        
+        # -- Make sure that fixed tiles archive is loaded --> this is to ensure that _get_latent_seeds generates also fixed states (tiles) 
+        assert self.fixed_tiles_arch is not None, "Failed loading fixed tiles for the given archive!" 
         # -- Make sure overwriting is enabled
         # (this means that after each step, we make sure that fix tiles do not get changed)
         self.overwrite = True
@@ -232,7 +238,11 @@ class Evolver:
         init_states, fixed_states, binary_mask = self._get_latent_seeds()
 
         # -- Run and evaluate the models
-        df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
+        # --- If the model was not trained with bin channel, set it to None
+        if fixed_tiles_archive is None:
+            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, None, "extended_stats")
+        else:
+            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
         
         # -- Evalute the df and save the results
         self._compute_eval_archive_stats(df, model_weights, fixed_seeds=True)
@@ -268,6 +278,7 @@ class Evolver:
         # CLEANUP
         # --------------------
         self.fixed_tiles_arch = fixed_tiles_archive 
+        self.fixed_tiles_difficulty, self.fixed_tiles_archive_size = old_fxd_til_diff, old_fxd_til_arch_size
         self.overwrite = overwrite
 
     def _compute_eval_archive_stats(self, df, weights, fixed_seeds):
@@ -420,24 +431,20 @@ class Evolver:
         Loads an archive (3D np array) of grid with semi-randomly generated
         levels.
         """
-        # - Load the archive with the fixed tiles
-        if self.fixed_tiles:
-            # -- Get path to the archive
-            filename = f"{self.fixed_tiles_difficulty}_{self.fixed_tiles_archive_size}.npy"
-            archive_path = os.path.join(self.settings_path, "fixed_tiles", self.game, filename)
 
-            # -- Try to load it into the numpy array
-            try:
-                if self.fixed_tiles_difficulty == "manual":
-                    self.fixed_tiles_arch = np.fromfile(archive_path, dtype=np.int32).reshape((-1, self.grid_dim, self.grid_dim))
-                else:
-                    self.fixed_tiles_arch = np.load(archive_path).astype(int)
-            except Exception as e:
-                raise Exception(f"Could not load the archive w/ fixed tiles! The erroe was {e}")
- 
-        # - No need to load it
-        else:
-            self.fixed_tiles_arch = None
+        # - Load the archive with the fixed tiles
+        # -- Get path to the archive
+        filename = f"{self.fixed_tiles_difficulty}_{self.fixed_tiles_archive_size}.npy"
+        archive_path = os.path.join(self.settings_path, "fixed_tiles", self.game, filename)
+
+        # -- Try to load it into the numpy array
+        try:
+            if self.fixed_tiles_difficulty == "manual":
+                self.fixed_tiles_arch = np.fromfile(archive_path, dtype=np.int32).reshape((-1, self.grid_dim, self.grid_dim))
+            else:
+                self.fixed_tiles_arch = np.load(archive_path).astype(int)
+        except Exception as e:
+            raise Exception(f"Could not load the archive w/ fixed tiles! The erroe was {e}")
 
     def _get_latent_seeds(self):
 
