@@ -176,47 +176,51 @@ class Evolver:
             with open(seeds_path, "wb") as f:
                 pickle.dump(seeds, f)
 
-        # - If the given experiment to be evaluated already has folder here
-        # then create a copy (temporarily) of it and erase the original one
+        # - If the given experiment has not been evaluated yet, then create its folder and
+        # fill it with the common stuff
         exp_folder_path = os.path.join(eval_folder_path, f"ExperimentId-{self.experiment_id}")
-        was_evaluated_before = False
-        if os.path.exists(exp_folder_path):
-            self.logger.working_on("Making a copy of the previous evaluation ...")
-            # -- Set the flag
-            was_evaluated_before = True
+        if not os.path.exists(exp_folder_path):
 
-            # -- Make a copy
-            copy_path = os.path.join(eval_folder_path, f"ExperimentId-{self.experiment_id}_copy")
-            copy_tree(exp_folder_path, copy_path)
+            # - Prepare the new directory
+            self.logger.working_on("Preparing directory ...")
 
-            # -- Erase the old one
-            shutil.rmtree(exp_folder_path)
+            # -- Create its folder first
+            os.makedirs(exp_folder_path)
 
-        # - Prepare the new directory
-        self.logger.working_on("Preparing directory ...")
-        # -- Create its folder first
-        os.makedirs(exp_folder_path)
+            # -- Copy the neccessary content from the experiments folder
+            # --- Folders: Archive snaps
+            archive_snaps_path = os.path.join(self.save_path, "archive_snaps")
+            copy_snaps_to = os.path.join(exp_folder_path, "archive_snaps")
+            copy_tree(archive_snaps_path, copy_snaps_to)
+            # --- Files: README.md, settings.json, trained_archive.csv
+            file_names = ["README.md", "settings.json", "trained_archive.csv"]
+            for f in file_names:
+                old_path, new_path = os.path.join(self.save_path, f), os.path.join(exp_folder_path, f)
+                shutil.copyfile(old_path, new_path)
+    
+            # -- Add training summary
+            self.logger.working_on("Summarising trained archive ...")
+            dir_path = os.path.join(exp_folder_path, "training_summary")
+            self._compute_archive_stats(self.gen_archive, dir_path, "objective")
 
-        # -- Create folder for evalutations
+        # - Create folder for the requested evalutation
+        # -- Define the path
         n_eval_b_size_fold_name = f"evals-nEvals{n_evals}-bSize{batch_size}"
         n_eval_b_size_fold_path = os.path.join(exp_folder_path, n_eval_b_size_fold_name)
-        os.makedirs(n_eval_b_size_fold_path)
+        # -- Check whether there has been a same eval run before
+        was_evaluated_before = False
+        if os.path.exists(n_eval_b_size_fold_path):
+            # --- Set the flag (used later)
+            was_evaluated_before = True
 
-        # -- Copy the neccessary content from the experiments folder
-        # --- Folders: Archive snaps
-        archive_snaps_path = os.path.join(self.save_path, "archive_snaps")
-        copy_snaps_to = os.path.join(exp_folder_path, "archive_snaps")
-        copy_tree(archive_snaps_path, copy_snaps_to)
-        # --- Files: README.md, settings.json, trained_archive.csv
-        file_names = ["README.md", "settings.json", "trained_archive.csv"]
-        for f in file_names:
-            old_path, new_path = os.path.join(self.save_path, f), os.path.join(exp_folder_path, f)
-            shutil.copyfile(old_path, new_path)
- 
-        # -- Create the new folder with the fresh content
-        self.logger.working_on("Summarising trained archive ...")
-        dir_path = os.path.join(exp_folder_path, "training_summary")
-        self._compute_archive_stats(self.gen_archive, dir_path, "objective")
+            # --- Make a copy
+            copy_path = n_eval_b_size_fold_path + "_copy"
+            copy_tree(n_eval_b_size_fold_path, copy_path)
+
+            # --- Erase the old eval folder
+            shutil.rmtree(n_eval_b_size_fold_path)
+        # -- Finally create the new folder
+        os.makedirs(n_eval_b_size_fold_path)
 
         # - Summarise results for seeds with and without fixed tiles
         self._compute_archive_stats_on_unseen_seeds(fixed_tile_type, fixed_tile_arch_size, seeds, n_eval_b_size_fold_path)
@@ -318,10 +322,13 @@ class Evolver:
                 df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, None, "extended_stats")
             else:
                 df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
-            
+                        
             # -- Evalute the df and save the results
             self._compute_eval_archive_stats(df, model_weights, fixed_seeds=True, save_path=save_to)
 
+            # -- Save the df with the stats
+            fname = os.path.join(save_to, "fixed_tiles_evaluation_summary", "models_stats.csv")
+            df.to_csv(fname, index=False)
 
             # NO FIXED tiles eval
             # -------------------- 
@@ -339,9 +346,13 @@ class Evolver:
             # --- Else just let both fixed tiles and binary channel to be empty
             else:
                 df = self._get_gen_sols_stats(model_weights, init_states, None, None, "extended_stats")
-            
+
             # -- Evalute the df and save the results
             self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False, save_path=save_to)
+
+            # -- Save the df with the stats
+            fname = os.path.join(save_to, "evaluation_summary", "models_stats.csv")
+            df.to_csv(fname, index=False)
 
             # CLEANUP
             # --------------------
