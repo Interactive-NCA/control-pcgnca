@@ -148,7 +148,8 @@ class Evolver:
                 game="zelda", 
                 n_seeds=fixed_tile_arch_size,
                 difficulty=fixed_tile_type,
-                path=settings_path,
+                settings_path=settings_path,
+                save_path=eval_folder_path,
                 graphics_path=os.path.join(assets_path, "zelda")
             )
 

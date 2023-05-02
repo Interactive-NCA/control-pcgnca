@@ -239,7 +239,8 @@ def main():
             game=args.fixedgen_game,
             n_seeds=int(args.fixedgen_nseeds),
             difficulty=args.fixedgen_difficulty,
-            path=SETTINGS_LOAD_PATH,
+            settings_path=SETTINGS_LOAD_PATH,
+            save_path=os.path.join(SETTINGS_LOAD_PATH, "fixed_tiles", args.fixedgen_game),
             graphics_path=os.path.join(GRAPHICS_PATH, args.fixedgen_game)
         )
 
