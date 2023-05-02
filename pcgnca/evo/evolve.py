@@ -13,6 +13,7 @@ import logging
 from distutils.dir_util import copy_tree
 
 import numpy as np
+import scipy.stats as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import psutil
@@ -236,8 +237,58 @@ class Evolver:
             shutil.rmtree(copy_path)
 
     # --------------------- Private functions (not exposed to cli)
-    def _aggregate_json_files(self):
-        pass
+    def _get_conf_int(self, a, frac):
+        return st.t.interval(frac, len(a)-1, loc=np.mean(a), scale=st.sem(a))
+
+    def _aggregate_json_files(self, data, save_path, fname_ext):
+
+        for eval_type, metrics in data.items():
+            for metric_name, vals in metrics.items():
+
+                # -- Compute the aggregate
+                keys = list(vals[0].keys())
+                result = dict()
+                for k in keys:
+                    k_vals = np.array([v[k] for v in vals])
+                    result[f"95CI {k}"] = list(np.around(self._get_conf_int(k_vals, 0.95), 2))
+                    result[f"MEAN {k}"] = round(np.mean(k_vals), 2)
+
+                # -- Save it
+                sp = os.path.join(save_path, f"{fname_ext}_{eval_type}", f"{metric_name}_stats.json")
+                with open(sp, "w") as f:
+                    json.dump(result, f)
+
+    def _aggregate_figures(self, data, save_path, fname_ext, metrics):
+
+        # - Init
+        solutions = self.gen_archive.as_pandas()
+        weights = np.array(solutions.loc[:, "solution_0":])
+
+        # - Create the figures
+        for tgo, dfs in data.items():
+
+            # -- Aggregate the dfs using mean
+            df_mean = pd.concat(dfs).groupby(level=0).mean()
+
+            # -- Now use it to plot the figures
+            for m in metrics:
+
+                # -- Create a GridArchive based on the criteria
+                # --- Initiliase the archive
+                archive = GridArchive(
+                    solution_dim=weights.shape[1],
+                    dims=[v for v in self.n_models_per_bc],
+                    ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
+                )
+                # --- Add obtained solutions to the archive
+                archive.add(weights, df_mean[m].to_numpy(), df_mean[self.bcs].to_numpy())
+
+                # -- Create a visualisation of the archive
+                title = f"{m} function value across archive"
+                fig = self._get_archive_heatmap(title, archive)
+                p = os.path.join(save_path, f"{fname_ext}_{tgo}", f"{m}.png")
+                fig.savefig(p)
+        
 
     def _get_evals_summary(self, eval_fold_path, save_path, n_evals, b_size):
         """Computes summary stats based on the folder with several eval runs 
@@ -249,12 +300,22 @@ class Evolver:
         # -- Define metrics
         metrics = ["objective", "reliability", "playability"]
         # -- Extension to the new folder names
-        # tmp = f"nE{n_evals}_bS{b_size}_{tgo}"
+        fname_ext = f"nE{n_evals}_bS{b_size}"
+        # -- Create the new folders
+        n_fold_names = [f"{fname_ext}_{core}" for core in to_go_over]
+        for fld_name in n_fold_names:
+            p = os.path.join(save_path, fld_name)
+            if os.path.exists(p):
+                shutil.rmtree(p)    
+            os.makedirs(p)
         
-        # - Collect json files (cum. stats) accross eval runs
-        data = {name: {} for name in to_go_over} 
+        # - Collection of data
+        data = {name: {} for name in to_go_over}
+        figures_data =  {name: [] for name in to_go_over}
         for i in range(1, n_evals + 1):
             for tgo in to_go_over:
+
+                # --- Collect stats data
                 for m in metrics:
                     p = os.path.join(eval_fold_path, f"ev{i}", tgo, f"{m}_stats.json")
                     with open(p) as f:
@@ -263,8 +324,17 @@ class Evolver:
                             data[tgo][m].append(d)
                         else:
                             data[tgo][m] = [d]
+                
+                # --- Collect figures data
+                p = os.path.join(eval_fold_path, f"ev{i}", tgo, "models_stats.csv")
+                figures_data[tgo].append(pd.read_csv(p))
 
-        print(data) 
+        # - Aggregate and save 
+        # -- Json files
+        self._aggregate_json_files(data, save_path, fname_ext)
+        # -- Figures
+        self._aggregate_figures(figures_data, save_path, fname_ext, metrics)
+        
 
     def _get_training_seed_batch_to_add(self, arrs):        
         # - Create new dictionary
@@ -401,7 +471,7 @@ class Evolver:
         # AGGREGATE the results accross eval runs
         # --------------------
         n_evals, b_size = len(seeds), seeds[0][0].shape[0]
-        aggregate_save_path = os.path.join("..", save_path)
+        aggregate_save_path = os.path.join(save_path, "..")
         self._get_evals_summary(save_path, aggregate_save_path, n_evals, b_size)
 
     def _compute_eval_archive_stats(self, df, weights, fixed_seeds, save_path, tr_arch_perc):
