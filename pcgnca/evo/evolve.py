@@ -70,7 +70,7 @@ class Evolver:
             gen_sols = self.scheduler.ask()
 
             # -- Get latent seeds
-            init_states, fixed_states, binary_mask = self._get_latent_seeds()
+            init_states, fixed_states, binary_mask = self._get_latent_seeds(self.n_init_states, self.fixed_tiles_arch)
 
             # -- Compute the objective values and BCs of the proposed solutions
             # --- STRATEGY 1: Compute objective values based on seeds with fixed tiles, BCs computed on seeds without fixed tiles
@@ -130,7 +130,7 @@ class Evolver:
                 # Save the evolver 
                 self._save()
 
-    def evaluate_archive(self, eval_fold_root, settings_path, assets_path, fxd_til_generator, fixed_tile_type, fixed_tile_arch_size):
+    def evaluate_archive(self, eval_fold_root, settings_path, assets_path, fxd_til_generator, fixed_tile_type, fixed_tile_arch_size, n_evals, batch_size):
         
         # - Section intro
         self.logger.section_start(":mage: Evaluation of the trained archive")
@@ -148,10 +148,33 @@ class Evolver:
                 game="zelda", 
                 n_seeds=fixed_tile_arch_size,
                 difficulty=fixed_tile_type,
-                path=settings_path,
+                settings_path=settings_path,
+                save_path=eval_folder_path,
                 graphics_path=os.path.join(assets_path, "zelda")
             )
-        
+
+        # - Check that there is a file that includes seeds for the given number of evals and batch size
+        seeds_path = os.path.join(eval_folder_path, f"nEvals{n_evals}-bSize{batch_size}.pkl")
+        if os.path.exists(seeds_path):
+            # -- Load it
+            with open(seeds_path, "rb") as f:
+                seeds = pickle.load(f)
+        else:
+            # -- Load fixed tiles archive
+            filename = f"{fixed_tile_type}_{fixed_tile_arch_size}.npy"
+            archive_path = os.path.join(settings_path, "fixed_tiles", "zelda", filename)
+            fixed_tiles_arch = np.load(archive_path).astype(int)
+
+            # -- Generate
+            seeds = []
+            for _ in range(n_evals):
+                init_states, fixed_states, binary_mask = self._get_latent_seeds(batch_size, fixed_tiles_arch)
+                seeds.append([init_states, fixed_states, binary_mask])
+
+            # -- Save for future use by other experiments
+            with open(seeds_path, "wb") as f:
+                pickle.dump(seeds, f)
+
         # - If the given experiment to be evaluated already has folder here
         # then create a copy (temporarily) of it and erase the original one
         exp_folder_path = os.path.join(eval_folder_path, f"ExperimentId-{self.experiment_id}")
@@ -493,24 +516,24 @@ class Evolver:
         except Exception as e:
             raise Exception(f"Could not load the archive w/ fixed tiles! The erroe was {e}")
 
-    def _get_latent_seeds(self):
+    def _get_latent_seeds(self, batch_size, fxd_til_archive):
 
         # - Get the random initial states. Essenitally each seed is
         # 2D array where each cell contains int encoding tile type
         # Since we may have multiple seeds, the result is a 3D array
         init_states = np.random.randint(
-            low=0, high=self.n_tiles, size=(self.n_init_states, self.grid_dim, self.grid_dim)
+            low=0, high=self.n_tiles, size=(batch_size, self.grid_dim, self.grid_dim)
         )
 
         # - If certain tiles should be fixed,
         # generate semi-random fixed tiles (semi = still have to conform to game rules),
         # and adjust the init_states accordingly. Finally, add binary
         # channel that denotes which encodes the fixed tile positions
-        if self.fixed_tiles_arch is not None:
+        if fxd_til_archive is not None:
 
             # -- Sample from the archive
-            idx = np.random.randint(low=0, high=len(self.fixed_tiles_arch), size=self.n_init_states)
-            fixed_tiles_sample = self.fixed_tiles_arch[idx] # 3D array
+            idx = np.random.randint(low=0, high=len(fxd_til_archive), size=batch_size)
+            fixed_tiles_sample = fxd_til_archive[idx] # 3D array
 
             # -- Create binary mask
             binary_mask = (fixed_tiles_sample > 0).astype(int) # IMPORTANT: fixed tiles means 1 to 7, you can not fix 0 (empty)
