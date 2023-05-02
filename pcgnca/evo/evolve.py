@@ -154,6 +154,7 @@ class Evolver:
             )
 
         # - Check that there is a file that includes seeds for the given number of evals and batch size
+        self.logger.working_on("Loading seeds ...")
         seeds_path = os.path.join(eval_folder_path, f"nEvals{n_evals}-bSize{batch_size}.pkl")
         if os.path.exists(seeds_path):
             # -- Load it
@@ -196,6 +197,11 @@ class Evolver:
         # -- Create its folder first
         os.makedirs(exp_folder_path)
 
+        # -- Create folder for evalutations
+        n_eval_b_size_fold_name = f"evals-nEvals{n_evals}-bSize{batch_size}"
+        n_eval_b_size_fold_path = os.path.join(exp_folder_path, n_eval_b_size_fold_name)
+        os.makedirs(n_eval_b_size_fold_path)
+
         # -- Copy the neccessary content from the experiments folder
         # --- Folders: Archive snaps
         archive_snaps_path = os.path.join(self.save_path, "archive_snaps")
@@ -213,7 +219,7 @@ class Evolver:
         self._compute_archive_stats(self.gen_archive, dir_path, "objective")
 
         # - Summarise results for seeds with and without fixed tiles
-        # self._compute_archive_stats_on_unseen_seeds(fixed_tile_type, fixed_tile_arch_size)
+        self._compute_archive_stats_on_unseen_seeds(fixed_tile_type, fixed_tile_arch_size, seeds, n_eval_b_size_fold_path)
 
         # - Erase the copy of the given experiment folder if neccessary
         if was_evaluated_before:
@@ -275,7 +281,7 @@ class Evolver:
         # - Save
         df.to_csv(path, index=False)
 
-    def _compute_archive_stats_on_unseen_seeds(self, fxd_tiles_diff, fxd_tiles_arch_size):
+    def _compute_archive_stats_on_unseen_seeds(self, fxd_tiles_diff, fxd_tiles_arch_size, seeds, save_path):
 
         # INITIAL setup
         # -------------------- 
@@ -285,74 +291,67 @@ class Evolver:
 
         # - Get setup of the evolver before going through evaluation
         # This to ensure that the state of evolve before and after evalution is the same
-        fixed_tiles_archive = self.fixed_tiles_arch
-        old_fxd_til_diff, old_fxd_til_arch_size = self.fixed_tiles_difficulty, self.fixed_tiles_archive_size
         overwrite = self.overwrite
 
-        # FIXED tiles eval
-        # --------------------
-        self.logger.working_on(f"Summarising performance of trained archive on NEW seeds with FIXED TILES ({fxd_tiles_diff}, {fxd_tiles_arch_size}) ...")
-        # - Set the fixed tiles difficulty and archive size
-        self.fixed_tiles_difficulty, self.fixed_tiles_archive_size = fxd_tiles_diff, fxd_tiles_arch_size
-        # - Load the fixed tiles with given settings
-        self._load_fixed_tiles_arch() # it is now available under self.fixed_tiles_arch
-        # - Assertions of assumptions
-        # -- Make sure that fixed tiles archive is loaded --> this is to ensure that _get_latent_seeds generates also fixed states (tiles) 
-        assert self.fixed_tiles_arch is not None, "Failed loading fixed tiles for the given archive!" 
-        # -- Make sure overwriting is enabled
-        # (this means that after each step, we make sure that fix tiles do not get changed)
-        self.overwrite = True
-        
-        # - Evaluate the archive on seeds with fixed tiles --> since the fixed
-        #   tiles archive is loaded, _get_latent_seeds knows to generate seeds with fixed tiles
-        # -- Generate the seeds
-        init_states, fixed_states, binary_mask = self._get_latent_seeds()
-
-        # -- Run and evaluate the models
-        # --- If the model was not trained with bin channel, set it to None
-        if fixed_tiles_archive is None:
-            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, None, "extended_stats")
-        else:
-            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
-        
-        # -- Evalute the df and save the results
-        self._compute_eval_archive_stats(df, model_weights, fixed_seeds=True)
-
-
-        # NO FIXED tiles eval
+        # EVALUATION running for N times
         # -------------------- 
-        self.logger.working_on("Summarising performance of trained archive on NEW seeds WITHOUT FIXED TILES ...")
-        # - Assertions
-        # -- Set the fixed tiles archive to none --> no fixed seeds
-        self.fixed_tiles_arch = None
+        self.logger.working_on(f"Summarising performance of trained archive on UNSEEN seeds w/ ({fxd_tiles_diff}, {fxd_tiles_arch_size}) and w/out FIXED TILES ...")
+        i = 1
+        for init_states, fixed_states, binary_mask in tqdm(seeds):
 
-        # -- No fixed seeds no need for overwrite
-        self.overwrite = False
+            # CREATE new folder
+            # --------------------
+            save_to = os.path.join(save_path, f"ev{i}")
+            os.makedirs(save_to)
 
-        # - Evaluate the archive on seeds with NO fixed tiles
-        # -- Generate the seeds
-        init_states, fixed_states, binary_mask = self._get_latent_seeds()  # fixed states and bin mask is None
-        assert fixed_states is None and binary_mask is None, "Incorrect evaluation setup!"
+            # FIXED tiles eval
+            # --------------------
+            self.logger.working_on(f"---------- ({i}) Seeds WITH fixed tiles")
+            # -- Make sure overwriting is enabled
+            # (this means that after each step, we make sure that fix tiles do not get changed)
+            self.overwrite = True
+            
+            # - Evaluate the archive on seeds with fixed tiles --> since the fixed
+            # -- Run and evaluate the models
+            # --- If the model was not trained with bin channel, set the the bin mask to None
+            if not self.binary_channel:
+                df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, None, "extended_stats")
+            else:
+                df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
+            
+            # -- Evalute the df and save the results
+            self._compute_eval_archive_stats(df, model_weights, fixed_seeds=True, save_path=save_to)
 
-        # -- Run and evaluate the models
-        # --- If model expects binary channel, create it (all zeros since there are no fixed tiles)
-        if fixed_tiles_archive is not None:
-            bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
-            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, bin_mask_zeros, "extended_stats")
-        # --- Else just let both fixed tiles and binary channel to be empty
-        else:
-            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
-        
-        # -- Evalute the df and save the results
-        self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False)
 
-        # CLEANUP
-        # --------------------
-        self.fixed_tiles_arch = fixed_tiles_archive 
-        self.fixed_tiles_difficulty, self.fixed_tiles_archive_size = old_fxd_til_diff, old_fxd_til_arch_size
-        self.overwrite = overwrite
+            # NO FIXED tiles eval
+            # -------------------- 
+            self.logger.working_on(f"---------- ({i}) Seeds WITHOUT fixed tiles")
+            # - Assertions
+            # -- No fixed seeds no need for overwrite
+            self.overwrite = False
 
-    def _compute_eval_archive_stats(self, df, weights, fixed_seeds):
+            # - Evaluate the archive on seeds with NO fixed tiles
+            # -- Run and evaluate the models
+            # --- If model expects binary channel, create it (all zeros since there are no fixed tiles)
+            if self.binary_channel:
+                bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
+                df = self._get_gen_sols_stats(model_weights, init_states, None, bin_mask_zeros, "extended_stats")
+            # --- Else just let both fixed tiles and binary channel to be empty
+            else:
+                df = self._get_gen_sols_stats(model_weights, init_states, None, None, "extended_stats")
+            
+            # -- Evalute the df and save the results
+            self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False, save_path=save_to)
+
+            # CLEANUP
+            # --------------------
+            self.overwrite = overwrite
+
+            # UPDATE
+            # --------------------
+            i += 1
+
+    def _compute_eval_archive_stats(self, df, weights, fixed_seeds, save_path):
 
         # - Define criteria of the archive to evaluate
         criterias = ["objective", "playability", "reliability"]
@@ -360,12 +359,7 @@ class Evolver:
         # - Get dir name where to save the results
         fixed = "fixed_tiles_" if fixed_seeds else ""
         dirname = fixed + "evaluation_summary"
-
-        # - Erase the old directory if it exists
-        try:
-            shutil.rmtree(os.path.join(self.save_path, dirname))
-        except Exception:
-            pass
+        dir_path = os.path.join(save_path, dirname)
 
         # - Run evaluation of archive on that criteria
         for criteria in criterias:
@@ -381,7 +375,7 @@ class Evolver:
             archive.add(weights, df[criteria].to_numpy(), df[self.bcs].to_numpy())
 
             # -- Finally evalutate the archive
-            self._compute_archive_stats(archive, dirname, criteria)
+            self._compute_archive_stats(archive, dir_path, criteria)
 
     def _compute_archive_stats(self, archive, dir_path, filename):
 
