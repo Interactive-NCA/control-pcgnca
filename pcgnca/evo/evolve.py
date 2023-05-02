@@ -248,19 +248,23 @@ class Evolver:
         to_go_over = ["fixed_tiles_evaluation_summary", "evaluation_summary"]
         # -- Define metrics
         metrics = ["objective", "reliability", "playability"]
-
-        # - ...
-        new_folders = []
-        for tgo in to_go_over:
-            new_folders.append(f"nE{n_evals}_bS{b_size}_{tgo}")
+        # -- Extension to the new folder names
+        # tmp = f"nE{n_evals}_bS{b_size}_{tgo}"
         
-        # 
+        # - Collect json files (cum. stats) accross eval runs
+        data = {name: {} for name in to_go_over} 
         for i in range(1, n_evals + 1):
             for tgo in to_go_over:
-
-                # --- Get json files
                 for m in metrics:
-                    pass
+                    p = os.path.join(eval_fold_path, f"ev{i}", tgo, f"{m}_stats.json")
+                    with open(p) as f:
+                        d = json.load(f)
+                        if m in data[tgo]:
+                            data[tgo][m].append(d)
+                        else:
+                            data[tgo][m] = [d]
+
+        print(data) 
 
     def _get_training_seed_batch_to_add(self, arrs):        
         # - Create new dictionary
@@ -393,6 +397,12 @@ class Evolver:
             # UPDATE
             # --------------------
             i += 1
+
+        # AGGREGATE the results accross eval runs
+        # --------------------
+        n_evals, b_size = len(seeds), seeds[0][0].shape[0]
+        aggregate_save_path = os.path.join("..", save_path)
+        self._get_evals_summary(save_path, aggregate_save_path, n_evals, b_size)
 
     def _compute_eval_archive_stats(self, df, weights, fixed_seeds, save_path, tr_arch_perc):
 
