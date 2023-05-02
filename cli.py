@@ -59,6 +59,8 @@ parser.add_argument('--fxd_til_size', action='store', type=int)
 
 # ---- For subsampling of the archive
 parser.add_argument('--n_models', action='store', type=int)
+parser.add_argument('--subsample_method', action='store', type=str)
+parser.add_argument('--k', action='store', type=int, default=30)
 
 # -- Parse the arguments
 args = parser.parse_args()
@@ -103,6 +105,7 @@ def run_gen_slurm_file_assertions():
 def run_subsample_assertions():
     assert args.n_models is not None and args.n_models > 30, "At least 30 models must be in the subsampled archive."
     assert args.expid is not None, "You must specify which experiment's archive you want to subsample via --expid flag."
+    assert args.subsample_method is not None, "You must specify which subsampling method you wish. Use --subsample_method with either 'basic' or 'kmeans'." 
 
 def load_evolver():
 
@@ -146,7 +149,7 @@ def main():
         settings = from_experimentid_to_settings(SETTINGS_LOAD_PATH, EXPERIMENT_SAVE_PATH, args.expid, vars(args))
 
         # - Run the subsample script
-        subsample(settings, args.n_models)
+        subsample(settings, args.n_models, args.subsample_method, args.k)
 
     # TRANSFERING FILES
     # - Server to local
