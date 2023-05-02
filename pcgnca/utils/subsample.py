@@ -2,6 +2,7 @@
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
+import numpy as np
 import pickle
 import os
 
@@ -42,29 +43,30 @@ def _subsample_archive_k_means(folder_path, n_models, k):
 
     # Perform K-means clustering on the behavior characteristics
     kmeans = KMeans(n_clusters=k, random_state=42).fit(X)
-    centroids = scaler.inverse_transform(kmeans.cluster_centers_)
 
-    # Find the closest model in the original DataFrame to each centroid
-    closest_model_indices = []
-    for centroid in centroids:
-        distances = ((df[behavior_cols] - centroid)**2).sum(axis=1)
-        closest_model_indices.append(distances.idxmin())
+    # Find the indices of the models in each cluster
+    cluster_indices = [np.where(kmeans.labels_ == i)[0] for i in range(k)]
 
-    # Select top n_models/k models closest to each centroid
-    df_subsample = pd.DataFrame()
-    for i, idx in enumerate(closest_model_indices):
-        cluster_members = df[df.index == idx].append(df.iloc[df[behavior_cols].sub(centroids[i]).pow(2).sum(1).nsmallest(n_models//k - 1).index])
-        df_subsample = pd.concat([df_subsample, cluster_members])
+    # Select top n_models//k models with the largest objective value from each cluster
+    top_indices = []
+    for indices in cluster_indices:
+        cluster_models = df.iloc[indices]
+        sorted_models = cluster_models.sort_values("objective", ascending=False)
+        top_indices.extend(sorted_models.index[:n_models//k])
+
+    # Select the models with the top indices
+    df_subsample = df.loc[top_indices]
 
     # Sort the subsample by "objective" column in descending order
     df_subsample = df_subsample.sort_values("objective", ascending=False)
 
-    # - Filter
+    # Filter
     df_filter = df_subsample[df_subsample["measure_1"] > 0] # Solution path length > 0
 
     # Save the new DataFrame to a CSV file in the same folder
     save_path = os.path.join(folder_path, "trained_archive_subsampled.csv")
     df_filter.to_csv(save_path, index=False)
+
 
 def _subsample_archive(folder_path, n_models):
     """
