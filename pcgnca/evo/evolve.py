@@ -236,6 +236,32 @@ class Evolver:
             shutil.rmtree(copy_path)
 
     # --------------------- Private functions (not exposed to cli)
+    def _aggregate_json_files(self):
+        pass
+
+    def _get_evals_summary(self, eval_fold_path, save_path, n_evals, b_size):
+        """Computes summary stats based on the folder with several eval runs 
+        """
+
+        # - Initial setup
+        # -- Define folders to go over in each eval run
+        to_go_over = ["fixed_tiles_evaluation_summary", "evaluation_summary"]
+        # -- Define metrics
+        metrics = ["objective", "reliability", "playability"]
+
+        # - ...
+        new_folders = []
+        for tgo in to_go_over:
+            new_folders.append(f"nE{n_evals}_bS{b_size}_{tgo}")
+        
+        # 
+        for i in range(1, n_evals + 1):
+            for tgo in to_go_over:
+
+                # --- Get json files
+                for m in metrics:
+                    pass
+
     def _get_training_seed_batch_to_add(self, arrs):        
         # - Create new dictionary
         new_dict = {
@@ -402,10 +428,8 @@ class Evolver:
         # - Compute the summary
         # -- Core stats
         max_n_solutions = self.n_models_per_bc[0]*self.n_models_per_bc[1]
-        stats = {
-            filename : self._get_metric_summary(df["objective"]),
-            "Perc. of Archive Filled": 100*round(len(df)/(max_n_solutions), 2)
-        }
+        stats = self._get_metric_summary(df["objective"])
+        stats["Perc. of Archive Filled"] =  100*round(len(df)/(max_n_solutions), 2)
 
         # -- Optional
         # --- Number of generations (only in training summary)
