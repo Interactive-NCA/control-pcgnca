@@ -80,7 +80,7 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals
     # -------- INDIVIDUAL metrics
     # - Define the section's structure
     subsections = [("fixed_tiles_evaluation_summary", "WITH"), ("evaluation_summary", "WITHOUT")]
-    fname_ext = f"nE{n_evals}_bs{batch_size}"
+    fname_ext = f"nE{n_evals}_bS{batch_size}"
     subsubsections = ["objective", "playability", "reliability"]
 
     # - Create the section 
