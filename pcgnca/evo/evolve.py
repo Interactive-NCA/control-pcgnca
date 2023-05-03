@@ -130,17 +130,99 @@ class Evolver:
         
         # - Section intro
         self.logger.section_start(":mage: Evaluation of the trained archive")
-        
-        # - Summarise the statistics about the trained archive
-        # -- Remove the older folder if it exists indeed
-        try:
-            shutil.rmtree(os.path.join(self.save_path, "training_summary"))
-        except Exception:
-            pass
 
-        # -- Create the new folder with the fresh content
-        self.logger.working_on("Summarising trained archive ...")
-        self._compute_archive_stats(self.result_archive, "training_summary", "objective")
+        # - Check that evaluation folder with the given fixed input exists
+        eval_fold_name = f"{fixed_tile_type}-{fixed_tile_arch_size}"
+        eval_folder_path = os.path.join(eval_fold_root, eval_fold_name)
+        if not os.path.exists(eval_folder_path):
+            self.logger.working_on("Setting up the evaluation folder including the fixed seeds ...")
+            # -- Create the folder 
+            os.makedirs(eval_folder_path)
+
+            # -- Create fixed tiles, TODO: make this more generalisable
+            fxd_til_generator(
+                game="zelda", 
+                n_seeds=fixed_tile_arch_size,
+                difficulty=fixed_tile_type,
+                settings_path=settings_path,
+                save_path=eval_folder_path,
+                graphics_path=os.path.join(assets_path, "zelda")
+            )
+
+        # - Check that there is a file that includes seeds for the given number of evals and batch size
+        self.logger.working_on("Loading seeds ...")
+        seeds_path = os.path.join(eval_folder_path, f"nEvals{n_evals}-bSize{batch_size}.pkl")
+        if os.path.exists(seeds_path):
+            # -- Load it
+            with open(seeds_path, "rb") as f:
+                seeds = pickle.load(f)
+        else:
+            # -- Load fixed tiles archive
+            filename = f"{fixed_tile_type}_{fixed_tile_arch_size}.npy"
+            archive_path = os.path.join(settings_path, "fixed_tiles", "zelda", filename)
+            fixed_tiles_arch = np.load(archive_path).astype(int)
+
+            # -- Generate
+            seeds = []
+            for _ in range(n_evals):
+                init_states, fixed_states, binary_mask = self._get_latent_seeds(batch_size, fixed_tiles_arch)
+                seeds.append([init_states, fixed_states, binary_mask])
+
+            # -- Save for future use by other experiments
+            with open(seeds_path, "wb") as f:
+                pickle.dump(seeds, f)
+
+        # - If the given experiment has not been evaluated yet, then create its folder and
+        # fill it with the common stuff
+        exp_folder_path = os.path.join(eval_folder_path, f"ExperimentId-{self.experiment_id}")
+        train_dir_path = os.path.join(exp_folder_path, "training_summary")
+        if not os.path.exists(exp_folder_path):
+
+            # - Prepare the new directory
+            self.logger.working_on("Preparing directory ...")
+
+            # -- Create its folder first
+            os.makedirs(exp_folder_path)
+
+            # -- Copy the neccessary content from the experiments folder
+            # --- Folders: Archive snaps
+            archive_snaps_path = os.path.join(self.save_path, "archive_snaps")
+            copy_snaps_to = os.path.join(exp_folder_path, "archive_snaps")
+            copy_tree(archive_snaps_path, copy_snaps_to)
+            # --- Files: README.md, settings.json, trained_archive.csv
+            file_names = ["README.md", "settings.json", "trained_archive.csv"]
+            for f in file_names:
+                old_path, new_path = os.path.join(self.save_path, f), os.path.join(exp_folder_path, f)
+                shutil.copyfile(old_path, new_path)
+    
+            # -- Add training summary
+            self.logger.working_on("Summarising trained archive ...")
+            self._compute_archive_stats(self.gen_archive, train_dir_path, "objective", None)
+
+        # - Get the perc of archive filled during training
+        with open(os.path.join(train_dir_path, "objective_stats.json")) as f:
+            sts = json.load(f)
+            tr_arch_perc = sts["Perc. of Archive Filled"]
+
+
+        # - Create folder for the requested evalutation
+        # -- Define the path
+        n_eval_b_size_fold_name = f"evals-nEvals{n_evals}-bSize{batch_size}"
+        n_eval_b_size_fold_path = os.path.join(exp_folder_path, n_eval_b_size_fold_name)
+        # -- Check whether there has been a same eval run before
+        was_evaluated_before = False
+        if os.path.exists(n_eval_b_size_fold_path):
+            # --- Set the flag (used later)
+            was_evaluated_before = True
+
+            # --- Make a copy
+            copy_path = n_eval_b_size_fold_path + "_copy"
+            copy_tree(n_eval_b_size_fold_path, copy_path)
+
+            # --- Erase the old eval folder
+            shutil.rmtree(n_eval_b_size_fold_path)
+        # -- Finally create the new folder
+        os.makedirs(n_eval_b_size_fold_path)
 
         # - Summarise results for seeds with and without fixed tiles
         self._compute_archive_stats_on_unseen_seeds()
@@ -206,7 +288,7 @@ class Evolver:
         # INITIAL setup
         # -------------------- 
         # - Retrieve solutions from the archive as pandas df
-        solutions = self.result_archive.as_pandas()
+        solutions = self.gen_archive.as_pandas()
         model_weights = np.array(solutions.loc[:, "solution_0":])
 
         # - Get setup of the evolver before going through evaluation
@@ -489,34 +571,20 @@ class Evolver:
         self.gen_model = self._from_name_to_model(self.model_name)
 
     def _init_pyribs(self):
-        """Use CMA-MAE QD algorithm as described here:
-        https://docs.pyribs.org/en/stable/tutorials/cma_mae.html
-        """
         # - Get initial random weights of the model
         initial_w = get_init_weights(self.gen_model)
 
-        # - Define archives
-        # -- Training archive (used by emmiters)
+        # - Define archive
         self.gen_archive = GridArchive(
-            solution_dim=len(initial_w),
-            dims=[v for v in self.n_models_per_bc],
-            ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))],
-            learning_rate=0.01, # 0 = CMA-ES vs 1 = CMA-ME
-            threshold_min=-1, # No matter the objective, any solution should pass
-            qd_score_offset=-100
-        )
-
-        # -- Result archive (only best solution are stored)
-        self.result_archive = GridArchive(
             solution_dim=len(initial_w),
             dims=[v for v in self.n_models_per_bc],
             ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
         )
 
         # - Define emmiters
-        # -- First, define hyper-parameters of the emmitter according to CMA-MAE
-        n_emitters, batch_size, ranker, selection_rule, restart_rule = 5, 30, "imp", "mu", "basic"
-        
+        # -- First, define hyper-parameters of the emmitter
+        n_emitters, batch_size, ranker = 5, 30, "2imp"
+
         # -- Finally, initialize the emitters
         gen_emitters = [
             EvolutionStrategyEmitter(
@@ -525,14 +593,12 @@ class Evolver:
                 sigma0=self.step_size,
                 ranker=ranker,
                 batch_size=batch_size,
-                selection_rule=selection_rule,
-                restart_rule=restart_rule
             )
             for _ in range(n_emitters)
         ]
 
         # - Define scheduler using the archive and emitters
-        self.scheduler = Scheduler(self.gen_archive, gen_emitters, result_archive=self.result_archive)
+        self.scheduler = Scheduler(self.gen_archive, gen_emitters)
 
     def _init(self, **settings):
         # -- Save the settings dict for later reference
@@ -559,7 +625,7 @@ class Evolver:
     def _save(self):
 
         # - Save the archive as csv
-        df = self.result_archive.as_pandas(include_metadata=True)
+        df = self.gen_archive.as_pandas(include_metadata=True)
         df.to_csv(os.path.join(self.save_path, "trained_archive.csv"))
 
         # - Save the heatmap of the archive
@@ -571,7 +637,7 @@ class Evolver:
         # -- Get the figure and save it
         n_gens = self.completed_generations if self.completed_generations else 0 
         title = f"After {n_gens} generations"
-        fig = self._get_archive_heatmap(title, self.result_archive)
+        fig = self._get_archive_heatmap(title, self.gen_archive)
         fig.savefig(os.path.join(archive_snaps_path, f"ngens_{n_gens}.png")) 
 
         # - Save the evolver 
