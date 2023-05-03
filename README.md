@@ -42,7 +42,7 @@ python3 cli.py --evaluate --expid 15 --n_cores 8 --fxd_til "easy" --fxd_til_size
 Before summarising given experiments, make sure you evaluted each of them so you are looking at the most recent data!
 
 ```
-python3 cli.py --summarise "1,2,3"
+python3 cli.py --summarise "1,2" --fxd_til "easy" --fxd_til_size 100 --n_evals 2 --eval_batch_size 10
 ```
 
 ### File transfer
