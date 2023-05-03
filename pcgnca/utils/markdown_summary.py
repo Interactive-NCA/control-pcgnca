@@ -14,7 +14,7 @@ import pandas as pd
 from PIL import Image
 
 # --------------------- Public functions
-def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals, batch_size):
+def get_experiments_summary(experiment_ids, experiments_path, save_path):
 
     # -------- SETUP
     # - Based on IDs, get paths of experiment to evaluate
@@ -22,19 +22,13 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals
     all_experiments = os.listdir(experiments_path)
     for exp_filename in all_experiments:
         for expid in experiment_ids:
-            if f"ExperimentId-{expid}"  == exp_filename:
-                exp_path = os.path.join(experiments_path, exp_filename)
-                dirs = os.listdir(exp_path)
-                for d in dirs:
-                    if  f"evals-nEvals{n_evals}-bSize{batch_size}" == d:
-                        # path = os.path.join(experiments_path, exp_filename, d)
-                        paths.append((expid, exp_path,))
-                        break
+            if f"ExperimentId-{expid}"  == exp_filename.split(os.sep)[-1]:
+                path = os.path.join(experiments_path, exp_filename)
+                paths.append((expid, path,))
+                break
     
     # - Sort paths based on id
     paths = sorted(paths, key=lambda x: x[0])
-    missing_evals = set(experiment_ids) - set([i[0] for i in paths])
-    assert len(paths) == len(experiment_ids), f"Have not found evaluations for all experiments! (Missing: {missing_evals})"
 
     # ------------- MAIN SECTION
     final_result = ""
@@ -51,8 +45,7 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals
 
     # -------- TRAINING RESULTS SUMMARY
     # - Define proper heading
-    heading = "### 🔖 Training Process Summary\n\n---\n\n" + f"👉 **{'objective'.upper()}**\n\n"
-
+    heading = "### 🔖 Training Process Summary\n\n---\n\n"
     # - Collect the data about settings first
     data = _load_experiment_results(paths, os.path.join("training_summary", "objective_stats.json"))
     # - Also the figures
@@ -76,11 +69,10 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals
     if history_summary != "Not possible":
         final_result += f"### 👀 Training differences in Objs and BCs trained and evaluated on seeds with and without fixed seeds\n\n---\n\n"
         final_result += history_summary
-    
+
     # -------- INDIVIDUAL metrics
     # - Define the section's structure
     subsections = [("fixed_tiles_evaluation_summary", "WITH"), ("evaluation_summary", "WITHOUT")]
-    fname_ext = f"nE{n_evals}_bS{batch_size}"
     subsubsections = ["objective", "playability", "reliability"]
 
     # - Create the section 
@@ -94,10 +86,10 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals
             final_result += f"👉 **{subsec_file.upper()}**\n\n"
 
             # --- Collect the data
-            data = _load_experiment_results(paths, os.path.join(f"{fname_ext}_{subsec_folder}", f"{subsec_file}_stats.json"))
+            data = _load_experiment_results(paths, os.path.join(subsec_folder, f"{subsec_file}_stats.json"))
             
             # --- Also the figures
-            figures = _add_figures(paths, [os.path.join(f"{fname_ext}_{subsec_folder}", f"{subsec_file}.png")], experiment_ids)
+            figures = _add_figures(paths, [os.path.join(subsec_folder, f"{subsec_file}.png")], experiment_ids)
 
             # --- Get the markdown summary 
             final_result += (_get_experiment_results_summary(data, experiment_ids) + figures)

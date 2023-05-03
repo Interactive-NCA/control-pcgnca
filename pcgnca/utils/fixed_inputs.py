@@ -233,10 +233,10 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
 
 # --------------------- Helper functions
 # ------------------------ Public
-def generate_fixed_tiles(game, n_seeds, difficulty, settings_path, save_path, graphics_path):
+def generate_fixed_tiles(game, n_seeds, difficulty, path, graphics_path):
 
     # - Load game's settings
-    game_set_path = os.path.join(settings_path, "games", f"{game}.json")
+    game_set_path = os.path.join(path, "games", f"{game}.json")
     with open(game_set_path) as f:
         settings = json.load(f)
 
@@ -247,7 +247,7 @@ def generate_fixed_tiles(game, n_seeds, difficulty, settings_path, save_path, gr
     seeds = generator.generate(n_seeds)
 
     # - Save these as binary in npy format
-    outfile = os.path.join(save_path, f"{difficulty}_{n_seeds}.npy")
+    outfile = os.path.join(path, "fixed_tiles", game, f"{difficulty}_{n_seeds}.npy")
     np.save(outfile, seeds)
 
     # - Visualise some of them
@@ -258,7 +258,7 @@ def generate_fixed_tiles(game, n_seeds, difficulty, settings_path, save_path, gr
         pil_img = visualiser.render_level(seeds[randint(0, n_seeds - 1)])
         frames.append(pil_img)
         
-    outfile = os.path.join(save_path, f"{difficulty}_{n_seeds}.gif")
+    outfile = os.path.join(path, "fixed_tiles", game, f"{difficulty}_{n_seeds}.gif")
     frames[0].save(outfile, format="GIF", append_images=frames, save_all=True, duration=100, loop=0)
 
 # ------------------------ Private

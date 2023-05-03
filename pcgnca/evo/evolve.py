@@ -10,10 +10,8 @@ import shutil
 import os
 import pickle
 import logging
-from distutils.dir_util import copy_tree
 
 import numpy as np
-import scipy.stats as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import psutil
@@ -49,10 +47,7 @@ class Evolver:
         self._init_pyribs()
 
         # - Load the fixed tiles if neccesary
-        if self.fixed_tiles:
-            self._load_fixed_tiles_arch()
-        else:
-            self.fixed_tiles_arch = None
+        self._load_fixed_tiles_arch()
 
 
     # --------------------- Public functions
@@ -71,7 +66,7 @@ class Evolver:
             gen_sols = self.scheduler.ask()
 
             # -- Get latent seeds
-            init_states, fixed_states, binary_mask = self._get_latent_seeds(self.n_init_states, self.fixed_tiles_arch)
+            init_states, fixed_states, binary_mask = self._get_latent_seeds()
 
             # -- Compute the objective values and BCs of the proposed solutions
             # --- STRATEGY 1: Compute objective values based on seeds with fixed tiles, BCs computed on seeds without fixed tiles
@@ -131,216 +126,26 @@ class Evolver:
                 # Save the evolver 
                 self._save()
 
-    def evaluate_archive(self, eval_fold_root, settings_path, assets_path, fxd_til_generator, fixed_tile_type, fixed_tile_arch_size, n_evals, batch_size):
+    def evaluate_archive(self):
         
         # - Section intro
         self.logger.section_start(":mage: Evaluation of the trained archive")
-
-        # - Check that evaluation folder with the given fixed input exists
-        eval_fold_name = f"{fixed_tile_type}-{fixed_tile_arch_size}"
-        eval_folder_path = os.path.join(eval_fold_root, eval_fold_name)
-        if not os.path.exists(eval_folder_path):
-            self.logger.working_on("Setting up the evaluation folder including the fixed seeds ...")
-            # -- Create the folder 
-            os.makedirs(eval_folder_path)
-
-            # -- Create fixed tiles, TODO: make this more generalisable
-            fxd_til_generator(
-                game="zelda", 
-                n_seeds=fixed_tile_arch_size,
-                difficulty=fixed_tile_type,
-                settings_path=settings_path,
-                save_path=eval_folder_path,
-                graphics_path=os.path.join(assets_path, "zelda")
-            )
-
-        # - Check that there is a file that includes seeds for the given number of evals and batch size
-        self.logger.working_on("Loading seeds ...")
-        seeds_path = os.path.join(eval_folder_path, f"nEvals{n_evals}-bSize{batch_size}.pkl")
-        if os.path.exists(seeds_path):
-            # -- Load it
-            with open(seeds_path, "rb") as f:
-                seeds = pickle.load(f)
-        else:
-            # -- Load fixed tiles archive
-            filename = f"{fixed_tile_type}_{fixed_tile_arch_size}.npy"
-            archive_path = os.path.join(settings_path, "fixed_tiles", "zelda", filename)
-            fixed_tiles_arch = np.load(archive_path).astype(int)
-
-            # -- Generate
-            seeds = []
-            for _ in range(n_evals):
-                init_states, fixed_states, binary_mask = self._get_latent_seeds(batch_size, fixed_tiles_arch)
-                seeds.append([init_states, fixed_states, binary_mask])
-
-            # -- Save for future use by other experiments
-            with open(seeds_path, "wb") as f:
-                pickle.dump(seeds, f)
-
-        # - If the given experiment has not been evaluated yet, then create its folder and
-        # fill it with the common stuff
-        exp_folder_path = os.path.join(eval_folder_path, f"ExperimentId-{self.experiment_id}")
-        train_dir_path = os.path.join(exp_folder_path, "training_summary")
-        if not os.path.exists(exp_folder_path):
-
-            # - Prepare the new directory
-            self.logger.working_on("Preparing directory ...")
-
-            # -- Create its folder first
-            os.makedirs(exp_folder_path)
-
-            # -- Copy the neccessary content from the experiments folder
-            # --- Folders: Archive snaps
-            archive_snaps_path = os.path.join(self.save_path, "archive_snaps")
-            copy_snaps_to = os.path.join(exp_folder_path, "archive_snaps")
-            copy_tree(archive_snaps_path, copy_snaps_to)
-            # --- Files: README.md, settings.json, trained_archive.csv
-            file_names = ["README.md", "settings.json", "trained_archive.csv"]
-            for f in file_names:
-                old_path, new_path = os.path.join(self.save_path, f), os.path.join(exp_folder_path, f)
-                shutil.copyfile(old_path, new_path)
-    
-            # -- Add training summary
-            self.logger.working_on("Summarising trained archive ...")
-            self._compute_archive_stats(self.gen_archive, train_dir_path, "objective", None)
-
-        # - Get the perc of archive filled during training
-        with open(os.path.join(train_dir_path, "objective_stats.json")) as f:
-            sts = json.load(f)
-            tr_arch_perc = sts["Perc. of Archive Filled"]
-
-
-        # - Create folder for the requested evalutation
-        # -- Define the path
-        n_eval_b_size_fold_name = f"evals-nEvals{n_evals}-bSize{batch_size}"
-        n_eval_b_size_fold_path = os.path.join(exp_folder_path, n_eval_b_size_fold_name)
-        # -- Check whether there has been a same eval run before
-        was_evaluated_before = False
-        if os.path.exists(n_eval_b_size_fold_path):
-            # --- Set the flag (used later)
-            was_evaluated_before = True
-
-            # --- Make a copy
-            copy_path = n_eval_b_size_fold_path + "_copy"
-            copy_tree(n_eval_b_size_fold_path, copy_path)
-
-            # --- Erase the old eval folder
-            shutil.rmtree(n_eval_b_size_fold_path)
-        # -- Finally create the new folder
-        os.makedirs(n_eval_b_size_fold_path)
+        
+        # - Summarise the statistics about the trained archive
+        # -- Remove the older folder if it exists indeed
+        try:
+            shutil.rmtree(os.path.join(self.save_path, "training_summary"))
+        except Exception:
+            pass
 
         # -- Create the new folder with the fresh content
         self.logger.working_on("Summarising trained archive ...")
         self._compute_archive_stats(self.result_archive, "training_summary", "objective")
 
-
         # - Summarise results for seeds with and without fixed tiles
-        self._compute_archive_stats_on_unseen_seeds(fixed_tile_type, fixed_tile_arch_size, seeds, n_eval_b_size_fold_path, tr_arch_perc)
-
-        # - Erase the copy of the given experiment folder if neccessary
-        if was_evaluated_before:
-            shutil.rmtree(copy_path)
+        self._compute_archive_stats_on_unseen_seeds()
 
     # --------------------- Private functions (not exposed to cli)
-    def _get_conf_int(self, a, frac):
-        return st.t.interval(frac, len(a)-1, loc=np.mean(a), scale=st.sem(a))
-
-    def _aggregate_json_files(self, data, save_path, fname_ext):
-
-        for eval_type, metrics in data.items():
-            for metric_name, vals in metrics.items():
-
-                # -- Compute the aggregate
-                keys = list(vals[0].keys())
-                result = dict()
-                for k in keys:
-                    k_vals = np.array([v[k] for v in vals])
-                    result[f"95CI {k}"] = list(np.around(self._get_conf_int(k_vals, 0.95), 2))
-                    result[f"MEAN {k}"] = round(np.mean(k_vals), 2)
-
-                # -- Save it
-                sp = os.path.join(save_path, f"{fname_ext}_{eval_type}", f"{metric_name}_stats.json")
-                with open(sp, "w") as f:
-                    json.dump(result, f)
-
-    def _aggregate_figures(self, data, save_path, fname_ext, metrics):
-
-        # - Init
-        solutions = self.gen_archive.as_pandas()
-        weights = np.array(solutions.loc[:, "solution_0":])
-
-        # - Create the figures
-        for tgo, dfs in data.items():
-
-            # -- Aggregate the dfs using mean
-            df_mean = pd.concat(dfs).groupby(level=0).mean()
-
-            # -- Now use it to plot the figures
-            for m in metrics:
-
-                # -- Create a GridArchive based on the criteria
-                # --- Initiliase the archive
-                archive = GridArchive(
-                    solution_dim=weights.shape[1],
-                    dims=[v for v in self.n_models_per_bc],
-                    ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
-                )
-                # --- Add obtained solutions to the archive
-                archive.add(weights, df_mean[m].to_numpy(), df_mean[self.bcs].to_numpy())
-
-                # -- Create a visualisation of the archive
-                title = f"{m} function value across archive"
-                fig = self._get_archive_heatmap(title, archive)
-                p = os.path.join(save_path, f"{fname_ext}_{tgo}", f"{m}.png")
-                fig.savefig(p)
-        
-
-    def _get_evals_summary(self, eval_fold_path, save_path, n_evals, b_size):
-        """Computes summary stats based on the folder with several eval runs 
-        """
-
-        # - Initial setup
-        # -- Define folders to go over in each eval run
-        to_go_over = ["fixed_tiles_evaluation_summary", "evaluation_summary"]
-        # -- Define metrics
-        metrics = ["objective", "reliability", "playability"]
-        # -- Extension to the new folder names
-        fname_ext = f"nE{n_evals}_bS{b_size}"
-        # -- Create the new folders
-        n_fold_names = [f"{fname_ext}_{core}" for core in to_go_over]
-        for fld_name in n_fold_names:
-            p = os.path.join(save_path, fld_name)
-            if os.path.exists(p):
-                shutil.rmtree(p)    
-            os.makedirs(p)
-        
-        # - Collection of data
-        data = {name: {} for name in to_go_over}
-        figures_data =  {name: [] for name in to_go_over}
-        for i in range(1, n_evals + 1):
-            for tgo in to_go_over:
-
-                # --- Collect stats data
-                for m in metrics:
-                    p = os.path.join(eval_fold_path, f"ev{i}", tgo, f"{m}_stats.json")
-                    with open(p) as f:
-                        d = json.load(f)
-                        if m in data[tgo]:
-                            data[tgo][m].append(d)
-                        else:
-                            data[tgo][m] = [d]
-                
-                # --- Collect figures data
-                p = os.path.join(eval_fold_path, f"ev{i}", tgo, "models_stats.csv")
-                figures_data[tgo].append(pd.read_csv(p))
-
-        # - Aggregate and save 
-        # -- Json files
-        self._aggregate_json_files(data, save_path, fname_ext)
-        # -- Figures
-        self._aggregate_figures(figures_data, save_path, fname_ext, metrics)
-        
-
     def _get_training_seed_batch_to_add(self, arrs):        
         # - Create new dictionary
         new_dict = {
@@ -396,7 +201,7 @@ class Evolver:
         # - Save
         df.to_csv(path, index=False)
 
-    def _compute_archive_stats_on_unseen_seeds(self, fxd_tiles_diff, fxd_tiles_arch_size, seeds, save_path, tr_arch_perc):
+    def _compute_archive_stats_on_unseen_seeds(self):
 
         # INITIAL setup
         # -------------------- 
@@ -406,80 +211,66 @@ class Evolver:
 
         # - Get setup of the evolver before going through evaluation
         # This to ensure that the state of evolve before and after evalution is the same
+        fixed_tiles_archive = self.fixed_tiles_arch
         overwrite = self.overwrite
 
-        # EVALUATION running for N times
-        # -------------------- 
-        self.logger.working_on(f"Summarising performance of trained archive on UNSEEN seeds w/ ({fxd_tiles_diff}, {fxd_tiles_arch_size}) and w/out FIXED TILES ...")
-        i = 1
-        for init_states, fixed_states, binary_mask in tqdm(seeds):
-
-            # CREATE new folder
-            # --------------------
-            save_to = os.path.join(save_path, f"ev{i}")
-            os.makedirs(save_to)
-
-            # FIXED tiles eval
-            # --------------------
-            self.logger.working_on(f"---------- ({i}) Seeds WITH fixed tiles")
-            # -- Make sure overwriting is enabled
-            # (this means that after each step, we make sure that fix tiles do not get changed)
-            self.overwrite = True
-            
-            # - Evaluate the archive on seeds with fixed tiles --> since the fixed
-            # -- Run and evaluate the models
-            # --- If the model was not trained with bin channel, set the the bin mask to None
-            if not self.binary_channel:
-                df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, None, "extended_stats")
-            else:
-                df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
-                        
-            # -- Evalute the df and save the results
-            self._compute_eval_archive_stats(df, model_weights, fixed_seeds=True, save_path=save_to, tr_arch_perc=tr_arch_perc)
-
-            # -- Save the df with the stats
-            fname = os.path.join(save_to, "fixed_tiles_evaluation_summary", "models_stats.csv")
-            df.to_csv(fname, index=False)
-
-            # NO FIXED tiles eval
-            # -------------------- 
-            self.logger.working_on(f"---------- ({i}) Seeds WITHOUT fixed tiles")
-            # - Assertions
-            # -- No fixed seeds no need for overwrite
-            self.overwrite = False
-
-            # - Evaluate the archive on seeds with NO fixed tiles
-            # -- Run and evaluate the models
-            # --- If model expects binary channel, create it (all zeros since there are no fixed tiles)
-            if self.binary_channel:
-                bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
-                df = self._get_gen_sols_stats(model_weights, init_states, None, bin_mask_zeros, "extended_stats")
-            # --- Else just let both fixed tiles and binary channel to be empty
-            else:
-                df = self._get_gen_sols_stats(model_weights, init_states, None, None, "extended_stats")
-
-            # -- Evalute the df and save the results
-            self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False, save_path=save_to, tr_arch_perc=tr_arch_perc)
-
-            # -- Save the df with the stats
-            fname = os.path.join(save_to, "evaluation_summary", "models_stats.csv")
-            df.to_csv(fname, index=False)
-
-            # CLEANUP
-            # --------------------
-            self.overwrite = overwrite
-
-            # UPDATE
-            # --------------------
-            i += 1
-
-        # AGGREGATE the results accross eval runs
+        # FIXED tiles eval
         # --------------------
-        n_evals, b_size = len(seeds), seeds[0][0].shape[0]
-        aggregate_save_path = os.path.join(save_path, "..")
-        self._get_evals_summary(save_path, aggregate_save_path, n_evals, b_size)
+        self.logger.working_on("Summarising performance of trained archive on NEW seeds with FIXED TILES ...")
+        # - Assertions of assumptions
+        # -- Make sure that fixed tiles archive is loaded --> this is to ensure that _get_latent_seeds generates also fixed states (tiles)
+        if self.fixed_tiles_arch is None:
+            self._load_fixed_tiles_arch() # it is now available under self.fixed_tiles_arch
+        
+        # -- Make sure overwriting is enabled
+        # (this means that after each step, we make sure that fix tiles do not get changed)
+        self.overwrite = True
+        
+        # - Evaluate the archive on seeds with fixed tiles --> since the fixed
+        #   tiles archive is loaded, _get_latent_seeds knows to generate seeds with fixed tiles
+        # -- Generate the seeds
+        init_states, fixed_states, binary_mask = self._get_latent_seeds()
 
-    def _compute_eval_archive_stats(self, df, weights, fixed_seeds, save_path, tr_arch_perc):
+        # -- Run and evaluate the models
+        df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
+        
+        # -- Evalute the df and save the results
+        self._compute_eval_archive_stats(df, model_weights, fixed_seeds=True)
+
+
+        # NO FIXED tiles eval
+        # -------------------- 
+        self.logger.working_on("Summarising performance of trained archive on NEW seeds WITHOUT FIXED TILES ...")
+        # - Assertions
+        # -- Set the fixed tiles archive to none --> no fixed seeds
+        self.fixed_tiles_arch = None
+
+        # -- No fixed seeds no need for overwrite
+        self.overwrite = False
+
+        # - Evaluate the archive on seeds with NO fixed tiles
+        # -- Generate the seeds
+        init_states, fixed_states, binary_mask = self._get_latent_seeds()  # fixed states and bin mask is None
+        assert fixed_states is None and binary_mask is None, "Incorrect evaluation setup!"
+
+        # -- Run and evaluate the models
+        # --- If model expects binary channel, create it (all zeros since there are no fixed tiles)
+        if fixed_tiles_archive is not None:
+            bin_mask_zeros = np.zeros((self.n_init_states, self.grid_dim, self.grid_dim))
+            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, bin_mask_zeros, "extended_stats")
+        # --- Else just let both fixed tiles and binary channel to be empty
+        else:
+            df = self._get_gen_sols_stats(model_weights, init_states, fixed_states, binary_mask, "extended_stats")
+        
+        # -- Evalute the df and save the results
+        self._compute_eval_archive_stats(df, model_weights, fixed_seeds=False)
+
+        # CLEANUP
+        # --------------------
+        self.fixed_tiles_arch = fixed_tiles_archive 
+        self.overwrite = overwrite
+
+    def _compute_eval_archive_stats(self, df, weights, fixed_seeds):
 
         # - Define criteria of the archive to evaluate
         criterias = ["objective", "playability", "reliability"]
@@ -487,7 +278,12 @@ class Evolver:
         # - Get dir name where to save the results
         fixed = "fixed_tiles_" if fixed_seeds else ""
         dirname = fixed + "evaluation_summary"
-        dir_path = os.path.join(save_path, dirname)
+
+        # - Erase the old directory if it exists
+        try:
+            shutil.rmtree(os.path.join(self.save_path, dirname))
+        except Exception:
+            pass
 
         # - Run evaluation of archive on that criteria
         for criteria in criterias:
@@ -503,30 +299,26 @@ class Evolver:
             archive.add(weights, df[criteria].to_numpy(), df[self.bcs].to_numpy())
 
             # -- Finally evalutate the archive
-            self._compute_archive_stats(archive, dir_path, criteria, tr_arch_perc)
+            self._compute_archive_stats(archive, dirname, criteria)
 
-    def _compute_archive_stats(self, archive, dir_path, filename, tr_arch_perc):
+    def _compute_archive_stats(self, archive, dirname, filename):
 
         # - Get the archive as df
         df = archive.as_pandas()
 
         # - Compute the summary
-        # -- Core stats
         max_n_solutions = self.n_models_per_bc[0]*self.n_models_per_bc[1]
-        stats = self._get_metric_summary(df["objective"])
-        stats["Perc. of Archive Filled"] =  100*round(len(df)/(max_n_solutions), 2)
-
-        # -- Optional
-        # --- Number of generations (only in training summary)
-        if tr_arch_perc is None:
-            stats["Number of generations"] = self.completed_generations
-
-        # --- Drop in terms of archive filled train to eval
-        if tr_arch_perc is not None:
-            stats["Number of perc. points drop (arch. fill.)"] = tr_arch_perc - stats["Perc. of Archive Filled"]
+        stats = {
+            filename : self._get_metric_summary(df["objective"]),
+            "N. Solutions" : len(df),
+            "N. Solutions Possible": max_n_solutions,
+            "Perc. of Archive Filled": 100*round(len(df)/(max_n_solutions), 2),
+            "Number of generations": self.completed_generations
+        }
 
         # - Save the summary along with the csv version of the archive
         # -- Make directory
+        dir_path = os.path.join(self.save_path, dirname)
         os.makedirs(dir_path, exist_ok=True)
 
         # -- Save the summary there as json
@@ -628,39 +420,43 @@ class Evolver:
         Loads an archive (3D np array) of grid with semi-randomly generated
         levels.
         """
-
         # - Load the archive with the fixed tiles
-        # -- Get path to the archive
-        filename = f"{self.fixed_tiles_difficulty}_{self.fixed_tiles_archive_size}.npy"
-        archive_path = os.path.join(self.settings_path, "fixed_tiles", self.game, filename)
+        if self.fixed_tiles:
+            # -- Get path to the archive
+            filename = f"{self.fixed_tiles_difficulty}_{self.fixed_tiles_archive_size}.npy"
+            archive_path = os.path.join(self.settings_path, "fixed_tiles", self.game, filename)
 
-        # -- Try to load it into the numpy array
-        try:
-            if self.fixed_tiles_difficulty == "manual":
-                self.fixed_tiles_arch = np.fromfile(archive_path, dtype=np.int32).reshape((-1, self.grid_dim, self.grid_dim))
-            else:
-                self.fixed_tiles_arch = np.load(archive_path).astype(int)
-        except Exception as e:
-            raise Exception(f"Could not load the archive w/ fixed tiles! The erroe was {e}")
+            # -- Try to load it into the numpy array
+            try:
+                if self.fixed_tiles_difficulty == "manual":
+                    self.fixed_tiles_arch = np.fromfile(archive_path, dtype=np.int32).reshape((-1, self.grid_dim, self.grid_dim))
+                else:
+                    self.fixed_tiles_arch = np.load(archive_path).astype(int)
+            except Exception as e:
+                raise Exception(f"Could not load the archive w/ fixed tiles! The erroe was {e}")
+ 
+        # - No need to load it
+        else:
+            self.fixed_tiles_arch = None
 
-    def _get_latent_seeds(self, batch_size, fxd_til_archive):
+    def _get_latent_seeds(self):
 
         # - Get the random initial states. Essenitally each seed is
         # 2D array where each cell contains int encoding tile type
         # Since we may have multiple seeds, the result is a 3D array
         init_states = np.random.randint(
-            low=0, high=self.n_tiles, size=(batch_size, self.grid_dim, self.grid_dim)
+            low=0, high=self.n_tiles, size=(self.n_init_states, self.grid_dim, self.grid_dim)
         )
 
         # - If certain tiles should be fixed,
         # generate semi-random fixed tiles (semi = still have to conform to game rules),
         # and adjust the init_states accordingly. Finally, add binary
         # channel that denotes which encodes the fixed tile positions
-        if fxd_til_archive is not None:
+        if self.fixed_tiles_arch is not None:
 
             # -- Sample from the archive
-            idx = np.random.randint(low=0, high=len(fxd_til_archive), size=batch_size)
-            fixed_tiles_sample = fxd_til_archive[idx] # 3D array
+            idx = np.random.randint(low=0, high=len(self.fixed_tiles_arch), size=self.n_init_states)
+            fixed_tiles_sample = self.fixed_tiles_arch[idx] # 3D array
 
             # -- Create binary mask
             binary_mask = (fixed_tiles_sample > 0).astype(int) # IMPORTANT: fixed tiles means 1 to 7, you can not fix 0 (empty)

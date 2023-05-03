@@ -35,14 +35,14 @@ python3 cli.py --train --expid 3 --n_cores 8 --n_generations 50 --save_freq 5
 Example command:
 
 ```
-python3 cli.py --evaluate --expid 15 --n_cores 8 --fxd_til "easy" --fxd_til_size 1000 --n_evals 10 --eval_batch_size 10
+python3 cli.py --evaluate --expid 1 --n_cores 8
 ```
 
 ### Summarising evaluation
 Before summarising given experiments, make sure you evaluted each of them so you are looking at the most recent data!
 
 ```
-python3 cli.py --summarise "1,2" --fxd_til "easy" --fxd_til_size 100 --n_evals 2 --eval_batch_size 10
+python3 cli.py --summarise "1,2,3"
 ```
 
 ### File transfer
