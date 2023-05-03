@@ -77,30 +77,30 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals
         final_result += f"### 👀 Training differences in Objs and BCs trained and evaluated on seeds with and without fixed seeds\n\n---\n\n"
         final_result += history_summary
     
-    if False:
-        # -------- INDIVIDUAL metrics
-        # - Define the section's structure
-        subsections = [("fixed_tiles_evaluation_summary", "WITH"), ("evaluation_summary", "WITHOUT")]
-        subsubsections = ["objective", "playability", "reliability"]
+    # -------- INDIVIDUAL metrics
+    # - Define the section's structure
+    subsections = [("fixed_tiles_evaluation_summary", "WITH"), ("evaluation_summary", "WITHOUT")]
+    fname_ext = f"nE{n_evals}_bs{batch_size}"
+    subsubsections = ["objective", "playability", "reliability"]
 
-        # - Create the section 
-        for subsec_folder, subsec_title in subsections:
-            # -- Define heading
-            final_result += f"### 🎯 Evaluation on seeds {subsec_title} Fixed tiles\n\n---\n\n"
+    # - Create the section 
+    for subsec_folder, subsec_title in subsections:
+        # -- Define heading
+        final_result += f"### 🎯 Evaluation on seeds {subsec_title} Fixed tiles\n\n---\n\n"
 
-            for subsec_file in subsubsections:
+        for subsec_file in subsubsections:
 
-                # --- Add subheading
-                final_result += f"👉 **{subsec_file.upper()}**\n\n"
+            # --- Add subheading
+            final_result += f"👉 **{subsec_file.upper()}**\n\n"
 
-                # --- Collect the data
-                data = _load_experiment_results(paths, os.path.join(subsec_folder, f"{subsec_file}_stats.json"))
-                
-                # --- Also the figures
-                figures = _add_figures(paths, [os.path.join(subsec_folder, f"{subsec_file}.png")], experiment_ids)
+            # --- Collect the data
+            data = _load_experiment_results(paths, os.path.join(f"{fname_ext}_{subsec_folder}", f"{subsec_file}_stats.json"))
+            
+            # --- Also the figures
+            figures = _add_figures(paths, [os.path.join(f"{fname_ext}_{subsec_folder}", f"{subsec_file}.png")], experiment_ids)
 
-                # --- Get the markdown summary 
-                final_result += (_get_experiment_results_summary(data, experiment_ids) + figures)
+            # --- Get the markdown summary 
+            final_result += (_get_experiment_results_summary(data, experiment_ids) + figures)
 
     # -------- SAVE THE RESULTING MD DOC
     # - Save the markdown file
