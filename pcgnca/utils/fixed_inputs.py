@@ -97,7 +97,8 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
             "easy": self._easy_generator,
             "all_special_random": self._special_random,
             "two_special_random": self._special_random,
-            "one_special_random": self._special_random
+            "one_special_random": self._special_random,
+            "mixed": self._mixed
         }
 
         assert self.difficulty in generators, "The specified difficulty was not found."
@@ -210,6 +211,30 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
             
             # -- Place the in the grid and save it to the result (inplace)
             self._place_tiles_random(result, i, tiles_to_place)
+
+        return result
+
+    def _mixed(self, n_seeds):
+        # - Define types of fixed tiles you want to mix
+        tps = ["easy", "all_special_random", "two_special_random", "one_special_random"]
+
+        # - Hyperparams
+        n_per_type = int(n_seeds/len(tps))
+
+        # - Get the mix
+        result = None
+        for t in tps:
+            # -- Get the generator
+            self.difficulty = t
+            gen = self._from_difficulty_to_gen()
+            tls = gen(n_per_type)
+            if result is None:
+                result = tls
+            else:
+                result = np.concatenate((result, tls), axis=0)
+
+        # - Shuffle
+        np.random.shuffle(result)
 
         return result
     
