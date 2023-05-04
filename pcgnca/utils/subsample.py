@@ -120,9 +120,10 @@ def _subsample_training_seeds(folder_path):
     for k, v in train_seeds.items():
         if k in generations:
             subsampled_v = {}
-            subsampled_v['binary_mask'] = v['binary_mask'][:10]
             subsampled_v['init_states'] = v['init_states'][:10]
-            subsampled_v['fixed_states'] = v['fixed_states'][:10]
+            if v['binary_mask'] is not None:
+                subsampled_v['binary_mask'] = v['binary_mask'][:10]
+                subsampled_v['fixed_states'] = v['fixed_states'][:10]
             subsampled_seeds[k] = subsampled_v
 
     # Save the new training seeds to a pickle file
