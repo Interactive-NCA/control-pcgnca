@@ -721,6 +721,7 @@ class Evolver:
                 sigma0=self.step_size,
                 ranker=ranker,
                 batch_size=batch_size,
+                restart_rule=self.save_freq
             )
             for _ in range(n_emitters)
         ]
