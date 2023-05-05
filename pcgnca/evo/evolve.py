@@ -8,6 +8,7 @@ import gc
 import json
 import shutil
 import os
+import time
 import pickle
 import logging
 from distutils.dir_util import copy_tree
@@ -65,6 +66,7 @@ class Evolver:
         latent_seeds = {}
 
         # - Main training loop
+        start_time = time.time()
         for itr in tqdm(range(self.completed_generations, int(self.n_generations))):
 
             # -- Request potential new models/elites from the optimizer
@@ -125,10 +127,19 @@ class Evolver:
 
             # -- Save the evolver and its context info based on freq interval
             if (itr % self.save_freq) == 0:
-                # Save training seeds and set the latent seeds to None
+
+                # --- Logging
+                tqdm.write(f"> {itr + 1} itrs completed after {time.time() - start_time:.2f}s")
+                tqdm.write(f"  - Size: {self.gen_archive.stats.num_elites}")
+                tqdm.write(f"  - Coverage: {self.gen_archive.stats.coverage}")  
+                tqdm.write(f"  - QD Score: {self.gen_archive.stats.qd_score}")  
+                tqdm.write(f"  - Max Obj: {self.gen_archive.stats.obj_max}")
+                tqdm.write(f"  - Mean Obj: {self.gen_archive.stats.obj_mean}")
+                
+                # --- Save training seeds and set the latent seeds to None
                 latent_seeds = self._save_training_seeds(latent_seeds)
 
-                # Save the evolver 
+                # --- Save the evolver 
                 self._save()
 
     def evaluate_archive(self, eval_fold_root, settings_path, assets_path, fxd_til_generator, fixed_tile_type, fixed_tile_arch_size, n_evals, batch_size):
