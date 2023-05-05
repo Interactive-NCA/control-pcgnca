@@ -133,3 +133,6 @@ dmypy.json
 
 # Ignore .job files -> for slurm
 slurm.job
+
+# Ignore some special local folders
+state
