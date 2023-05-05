@@ -43,8 +43,8 @@ class ZeldaEvaluation:
             "n_keys": 3,
             "n_doors": 3,
             "n_regions": 5,
-            "n_enemies": 1,
-            "nearest_enemy": 2,
+            "n_enemies": 3,
+            "nearest_enemy": 1,
             "path_length": 1
         }
 
