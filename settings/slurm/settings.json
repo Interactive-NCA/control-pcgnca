@@ -7,6 +7,6 @@
     "repo_path": "/home/data_shares/interactive_nca/control-pcgnca",
     "envname": "pcgnca-v10",
     "install_req": false,
-    "exclude_nodes": "cn8",
+    "exclude_nodes": "cn8,desktop18",
     "python_version": "3.10"
 }

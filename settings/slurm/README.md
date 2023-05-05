@@ -5,7 +5,7 @@ Example command for:
 **Training**
 
 ```
-python3 cli.py --gen-slurm-script --train --n_generations 200 --save_freq 5 --n_cores 80 --timeout_after "20:00:00"
+python3 cli.py --gen-slurm-script --train --n_generations 3000 --save_freq 100 --n_cores 32 --timeout_after "08:00:00"
 ```
 
 
