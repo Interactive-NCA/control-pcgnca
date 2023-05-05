@@ -43,6 +43,9 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
         # -- Number of splits of grid per dimension (0 = full grid, ...)
         self.n_splits = [0, 1]
 
+        # -- Should easy fixed tiles (walls) be rotated
+        self.easy_rotate = False
+
         # -- Get the configs
         self._get_config() 
 
@@ -95,6 +98,7 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
         # Overview of generators 
         generators = {
             "easy": self._easy_generator,
+            "easy_rotate": self._easy_generator,
             "all_special_random": self._special_random,
             "two_special_random": self._special_random,
             "one_special_random": self._special_random,
@@ -102,6 +106,9 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
         }
 
         assert self.difficulty in generators, "The specified difficulty was not found."
+
+        if self.difficulty == "easy_rotate":
+            self.easy_rotate = True
 
         return generators[self.difficulty]
 
@@ -181,10 +188,13 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
                 a = np.zeros((self.grid_dim, self.grid_dim))
                 a[rows, cols] = 1
 
-                # --- Rotate it randomly and save the result
-                k = choice([1, 2, 3, 4])# how many times to rotate
-                a_rot = np.rot90(a, k)
-                a = a_rot.reshape((1, self.grid_dim, self.grid_dim))
+                # --- Rotate it randomly and save the result (if applicable)
+                if self.easy_rotate:
+                    k = choice([1, 2, 3, 4])# how many times to rotate
+                    a = np.rot90(a, k)
+
+                # --- Turn it into 3d 
+                a = a.reshape((1, self.grid_dim, self.grid_dim))
 
                 # --- Save it
                 if result is None:
