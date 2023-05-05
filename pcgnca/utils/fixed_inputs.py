@@ -166,15 +166,31 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
         """
 
         # - Generate the seeds with fixe tiles
-        result = np.zeros((n_seeds, self.grid_dim, self.grid_dim))
+        result = None
         for i in tqdm(range(n_seeds)):
             # -- Choose configuration
             config = self.configs[choice(self.n_splits)]
 
             # -- Generate the coordinates of the fixed tiles
             for x_bound, y_bound in zip(config["x_bounds"], config["y_bounds"]):
+
+                # --- Get the coordinates of walls
                 rows, cols = self._brick_object_gen(x_bound, y_bound, config["n_steps"], x_bound[0], y_bound[0])
-                result[i, rows, cols] = 1
+
+                # --- Create an array based on the coordinates
+                a = np.zeros((self.grid_dim, self.grid_dim))
+                a[rows, cols] = 1
+
+                # --- Rotate it randomly and save the result
+                k = choice([1, 2, 3, 4])# how many times to rotate
+                a_rot = np.rot90(a, k)
+                a = a_rot.reshape((1, self.grid_dim, self.grid_dim))
+
+                # --- Save it
+                if result is None:
+                    result = a_rot
+                else:
+                    result = np.concatenate((result, a_rot), axis=0)
 
         return result
 

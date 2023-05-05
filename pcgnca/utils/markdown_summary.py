@@ -87,7 +87,7 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals
     # - Create the section 
     for subsec_folder, subsec_title in subsections:
         # -- Define heading
-        if "WITH" == subsec_file:
+        if "WITH" == subsec_title:
             final_result += f"### 🎯 Evaluation on seeds {subsec_title} Fixed tiles ({fxd_til_setup})\n\n---\n\n"
         else:
             final_result += f"### 🎯 Evaluation on seeds {subsec_title} Fixed tiles\n\n---\n\n"
