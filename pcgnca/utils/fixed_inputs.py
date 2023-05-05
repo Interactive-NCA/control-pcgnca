@@ -188,9 +188,9 @@ class ZeldaFixedTilesGenerator(FixedTilesBase):
 
                 # --- Save it
                 if result is None:
-                    result = a_rot
+                    result = a
                 else:
-                    result = np.concatenate((result, a_rot), axis=0)
+                    result = np.concatenate((result, a), axis=0)
 
         return result
 
