@@ -17,6 +17,8 @@ from PIL import Image
 def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals, batch_size):
 
     # -------- SETUP
+    # - Get the fixed tiles setup
+    fxd_til_setup = experiments_path.split(os.sep)[-1]
     # - Based on IDs, get paths of experiment to evaluate
     paths = []
     all_experiments = os.listdir(experiments_path)
@@ -27,7 +29,6 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals
                 dirs = os.listdir(exp_path)
                 for d in dirs:
                     if  f"evals-nEvals{n_evals}-bSize{batch_size}" == d:
-                        # path = os.path.join(experiments_path, exp_filename, d)
                         paths.append((expid, exp_path,))
                         break
     
@@ -86,7 +87,10 @@ def get_experiments_summary(experiment_ids, experiments_path, save_path, n_evals
     # - Create the section 
     for subsec_folder, subsec_title in subsections:
         # -- Define heading
-        final_result += f"### 🎯 Evaluation on seeds {subsec_title} Fixed tiles\n\n---\n\n"
+        if "WITH" == subsec_file:
+            final_result += f"### 🎯 Evaluation on seeds {subsec_title} Fixed tiles ({fxd_til_setup})\n\n---\n\n"
+        else:
+            final_result += f"### 🎯 Evaluation on seeds {subsec_title} Fixed tiles\n\n---\n\n"
 
         for subsec_file in subsubsections:
 
