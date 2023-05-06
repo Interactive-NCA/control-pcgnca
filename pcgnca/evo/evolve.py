@@ -289,7 +289,8 @@ class Evolver:
                 archive = GridArchive(
                     solution_dim=weights.shape[1],
                     dims=[v for v in self.n_models_per_bc],
-                    ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
+                    ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))],
+                    qd_score_offset=-50
                 )
                 # --- Add obtained solutions to the archive
                 archive.add(weights, df_mean[m].to_numpy(), df_mean[self.bcs].to_numpy())
@@ -503,7 +504,8 @@ class Evolver:
             archive = GridArchive(
                 solution_dim=weights.shape[1],
                 dims=[v for v in self.n_models_per_bc],
-                ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
+                ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))],
+                qd_score_offset=-50
             )
             # --- Add obtained solutions to the archive
             archive.add(weights, df[criteria].to_numpy(), df[self.bcs].to_numpy())
@@ -706,7 +708,8 @@ class Evolver:
         self.gen_archive = GridArchive(
             solution_dim=len(initial_w),
             dims=[v for v in self.n_models_per_bc],
-            ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))]
+            ranges=[self.bcs_bounds[i] for i in range(len(self.bcs))],
+            qd_score_offset=-50
         )
 
         # - Define emmiters
