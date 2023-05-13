@@ -185,5 +185,3 @@ python3 cli.py --summarise "1,2,3,4,5,6" --fxd_til "easy" --fxd_til_size 1000 --
 
 You can then view the result in [summaries folder](summaries/). If you are using VS code, you can simply click on the markdown file and then in upper right corner click on
 `Open preview to the side`.
-
-## :microscope: Reproduce the experiments
