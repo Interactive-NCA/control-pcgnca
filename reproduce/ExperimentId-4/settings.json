@@ -1,0 +1,87 @@
+{
+    "experiment_id": 4,
+    "game": "zelda",
+    "model_name": "NCA",
+    "step_size": 0.05,
+    "n_init_states": 10,
+    "n_steps": 50,
+    "n_aux_chans": 3,
+    "binary_channel": true,
+    "fixed_tiles": true,
+    "fixed_tiles_difficulty": "two_special_random",
+    "fixed_tiles_archive_size": 1000,
+    "evolve_strategy": "default",
+    "padding_type": 1,
+    "overwrite": true,
+    "playability_weight": 1,
+    "reliability_weight": 1,
+    "include_diversity": false,
+    "settings_to_log": {
+        "experiment_id": 4,
+        "description": "Experiment reproducing archive trained on fixed pairs.",
+        "game": "zelda",
+        "model_name": "NCA",
+        "step_size": 0.05,
+        "n_init_states": 10,
+        "n_steps": 50,
+        "n_aux_chans": 3,
+        "binary_channel": true,
+        "fixed_tiles": true,
+        "fixed_tiles_difficulty": "two_special_random",
+        "fixed_tiles_archive_size": 1000,
+        "evolve_strategy": "default",
+        "padding_type": 1,
+        "overwrite": true,
+        "playability_weight": 1,
+        "reliability_weight": 1,
+        "include_diversity": false,
+        "bcs": [
+            "symmetry",
+            "path_length"
+        ],
+        "bcs_bounds": [
+            [
+                0,
+                1
+            ],
+            [
+                0,
+                271
+            ]
+        ],
+        "n_models_per_bc": [
+            100,
+            100
+        ],
+        "n_tiles": 8,
+        "grid_dim": 16
+    },
+    "bcs": [
+        "symmetry",
+        "path_length"
+    ],
+    "bcs_bounds": [
+        [
+            0,
+            1
+        ],
+        [
+            0,
+            271
+        ]
+    ],
+    "n_models_per_bc": [
+        100,
+        100
+    ],
+    "n_tiles": 8,
+    "grid_dim": 16,
+    "partition": "red,brown",
+    "emails": "youremail@itu.dk",
+    "username": "user",
+    "domain": "hpc.itu.dk",
+    "bashrc_path": "/home/user/.bashrc",
+    "repo_path": "/home/data_shares/interactive_nca/control-pcgnca",
+    "envname": "pcgnca",
+    "install_req": false
+}
