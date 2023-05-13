@@ -131,3 +131,6 @@ evaluated them against fixed walls (`easy`) with the archive size of fixed tiles
 ```bash
 python3 cli.py --summarise "1,2,3,4,5,6" --fxd_til "easy" --fxd_til_size 1000 --n_evals 10 --eval_batch_size 10
 ```
+
+You can then view the result in [summaries folder](summaries/). If you are using VS code, you can simply click on the markdown file and then in upper right corner click on
+`Open preview to the side`.
