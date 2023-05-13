@@ -1,63 +1,47 @@
-:construction: **NOTE:** this repository is still under active development and therefore the documentation still has to be polished 
+## :bug: About
+Platform for experimentation with generating game levels via archive of Neural Cellular Automata trained using CMA-ME QD algorithm. The `README`
+is structured into three main sections: environment setup, results reproduction, conduct new experiments. One of the main functionalities of this platform is 
+to be able to train archive of NCA models while being able to differ many hyper-parameters. The main training loop is outlined in the figure below.
 
-## About
-Platform for experimentation with generating game levels via archive of Neural Cellular Automata.
+![Main trainining loop overview](assets/readme/training_overview_short.png)
 
-## Environment setup
-### Install dependencies
-How to install dependencies.
-
-### Fixed tiles generation based on game
-Here, I should describe how to generate fixed tiles.
-
-## Guide
-This should describe the whole experimentation procedure.
-
-### Training
-There are two ways to start training procedure, both described below. There 
-
-#### From SCRATCH
-If there was no training ran for the given experiment, i.e., there is no folder with the given experiment ID in [experiments](experiments), then you should follow these steps:
-1. Setup experiment parameters [experiment settings](settings/experiment/settings.json)
-2. Start the training procedure by running in the command line:
-
-```
-python3 cli.py --train --n_cores 8 --n_generations 50 --save_freq 5
-```
-
-#### From EXISTING EVOLVER
-Example:
-```
-python3 cli.py --train --expid 3 --n_cores 8 --n_generations 50 --save_freq 5
-```
-
-### Evaluate
-Example command:
-
-```
-python3 cli.py --evaluate --expid 15 --n_cores 8 --fxd_til "easy" --fxd_til_size 1000 --n_evals 10 --eval_batch_size 10
-```
-
-### Summarising evaluation
-Before summarising given experiments, make sure you evaluted each of them so you are looking at the most recent data!
-
-```
-python3 cli.py --summarise "1,2" --fxd_til "easy" --fxd_til_size 100 --n_evals 2 --eval_batch_size 10
-```
-
-### File transfer
-Note that `--files_exclude` should be comma separated list of files or directories to exclude. Finally, before starting, checkout
-the `settings/slurm/settings.json`, here you can specify parameters such as `domain` (of the server) and `username`.
-
-#### From server to local
-python3 cli.py --file-transfer --save_where "test/" --expid 2 --files_exclude "evolver.pkl" --server-to-local
-
-#### From local to server
-python3 cli.py --file-transfer --save_where "test/" --expid 2 --files_exclude "evolver.pkl"
-
-### Archive subsampling
-For production purposes, you may want to use smaller archive, this can be done via subsampling:
+## :snake: Conda Environment Setup
+We use `conda` as our default virtual environment. First, create conda environment and install `pip`:
 
 ```bash
-python3 cli.py --subsample --expid 15 --n_models 100
+conda create --name pcgnca python=3.10
+conda activate pcgnca
+conda install pip
 ```
+
+Then, install rest of the packages via `pip`:
+
+```bash
+python3.10 -m pip install -r requirements.txt
+```
+## :microscope: Reproduce the experiments
+The reproduction of our experiments can be done in for subsequent steps: fixed tiles archive generation, archive training, archive evaluation, results summarisation. 
+All these steps are documented in detail below.
+
+### Fixed tiles archive generation
+To generate archives with fixed tiles used in our work, run the following command:
+
+```bash
+# walls
+python3 cli.py --gen-fixed-seeds --fixedgen-game "zelda" --fixedgen-nseeds 1000 --fixedgen-difficulty "easy"
+# triples
+python3 cli.py --gen-fixed-seeds --fixedgen-game "zelda" --fixedgen-nseeds 1000 --fixedgen-difficulty "all_special_random"
+# pairs
+python3 cli.py --gen-fixed-seeds --fixedgen-game "zelda" --fixedgen-nseeds 1000 --fixedgen-difficulty "two_special_random"
+# singles
+python3 cli.py --gen-fixed-seeds --fixedgen-game "zelda" --fixedgen-nseeds 1000 --fixedgen-difficulty "one_special_random"
+# mixed
+python3 cli.py --gen-fixed-seeds --fixedgen-game "zelda" --fixedgen-nseeds 1000 --fixedgen-difficulty "mixed"
+```
+
+You can then checkout the results in the zelda fixed tiles folder where each type of fixed tiles also has a corresponding `gif` showcasing ten percent of the fixed tiles archive sampled randomly. 
+Below, you can see example of archive for fixed `Walls`, `Triples` and `Mixed`.
+
+| Walls            |   Triples        |   Mixed          |
+|:----------------:|:----------------:|:----------------:|
+| ![](assets/readme/easy_1000.gif) | ![](assets/readme/all_special_random_1000.gif) | ![](assets/readme/mixed_1000.gif)
