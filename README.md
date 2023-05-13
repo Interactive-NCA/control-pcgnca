@@ -23,7 +23,7 @@ Then, install rest of the packages via `pip`:
 python3.10 -m pip install -r requirements.txt
 ```
 
-# :bug: Evolve your own game level generators
+## :bug: Evolve your own game level generators
 To evolve your own archive of game level generators, you first need to setup the experiment in [settings](settings/). This folder includes 4 subfolders where each includes readme providing the neccessary details. 
 The high level summary is:
 
