@@ -1,11 +1,11 @@
 {
     "partition": "red,brown",
-    "emails": "luci@itu.dk,lukr@itu.dk",
-    "username": "luci",
+    "emails": "user@itu.dk",
+    "username": "user",
     "domain": "hpc.itu.dk",
-    "bashrc_path": "/home/luci/.bashrc",
+    "bashrc_path": "/home/user/.bashrc",
     "repo_path": "/home/data_shares/interactive_nca/control-pcgnca",
-    "envname": "pcgnca-v10",
+    "envname": "pcgnca",
     "install_req": false,
     "exclude_nodes": "cn8,desktop18",
     "python_version": "3.10"

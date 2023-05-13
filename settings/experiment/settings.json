@@ -1,6 +1,6 @@
 {
-    "experiment_id": 48,
-    "description" : "Same as exp38, but restarts emitters every 100th iteration.",
+    "experiment_id": 0,
+    "description" : "Default example experiment.",
     "game": "zelda",
     "model_name": "NCA",
     "step_size": 0.05,

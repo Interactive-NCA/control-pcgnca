@@ -1,9 +1,2 @@
-There are currently two types of fixed inputs:
-1. `Easy` - Random variations of walls only
-2. `Manual` - Levels generated manually via our UI interface
+This readme should detaile what type of fixed tiles you can generate and how.
 
-Example of generation:
-
-```bash
-python3 cli.py --gen-fixed-seeds --fixedgen-game "zelda" --fixedgen-nseeds 10 --fixedgen-difficulty "easy"
-```
