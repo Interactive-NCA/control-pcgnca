@@ -87,3 +87,47 @@ conda activate pcgnca
 
 python3 cli.py --train --expid 1 --n_cores 32 --n_generations 3000 --save_freq 100
 ```
+
+### Archive evaluation
+To evaluate the archives `locally`, you can run (example for the baseline):
+
+```bash
+python3 cli.py --evaluate --expid 1 --n_cores 32 --fxd_til "easy" --fxd_til_size 1000 --n_evals 10 --eval_batch_size 10
+```
+
+where:
+- `--fxd_til`: type of fixed tiles you want to evaluate the archive on
+- `--fxd_til_size`: size of the fixed tiles archive
+- `--n_evals`: number of evaluations to run
+- `--eval_batch_size`: size of the batch in each evaluation based on which BCs and objective of each model should be computed
+
+For cluster, you can again use the template:
+
+```bash
+#!/bin/bash
+
+#SBATCH --job-name=PCGNCA-EXPERIMENT-X
+#SBATCH --output=experiments/ExperimentId-X/slurm.out
+#SBATCH --cpus-per-task=32
+#SBATCH --time=08:00:00
+#SBATCH --partition=red,brown
+#SBATCH --mail-user=user@uni.edu
+#SBATCH --mail-type=BEGIN,FAIL,END
+#SBATCH --exclude cn8
+
+echo "Running on $(hostname)"
+
+module load Anaconda3
+source /home/user/.bashrc
+conda activate pcgnca
+
+python3 cli.py --evaluate --expid 1 --n_cores 32 --fxd_til "easy" --fxd_til_size 1000 --n_evals 10 --eval_batch_size 10
+```
+
+### Summarising results
+Once the results are computed, you can use the summarisation script that puts them in a nice markdown overiew. Assuming we have trained all our experiments and 
+evaluated them against fixed walls (`easy`) with the archive size of fixed tiles being 1000, number of evalutions was 10 and evaluation batch size was 10 as well:
+
+```bash
+python3 cli.py --summarise "1,2,3,4,5,6" --fxd_til "easy" --fxd_til_size 1000 --n_evals 10 --eval_batch_size 10
+```
